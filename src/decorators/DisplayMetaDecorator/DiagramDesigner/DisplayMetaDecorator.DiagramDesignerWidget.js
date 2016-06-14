@@ -47,7 +47,7 @@ define([
         ModelDecoratorDiagramDesignerWidget.prototype.on_addTo.apply(this, arguments);
 
         this.addMetaName(client, nodeObj);
-//        this.hidePortNames(client, nodeObj);
+        this.hidePortNames(client, nodeObj);
     };
 
     DisplayMetaDecorator.prototype.addMetaName = function (client, nodeObj) {
@@ -65,7 +65,7 @@ define([
         metaNameDiv.insertAfter(this.skinParts.$name);
     };
 
-    DisplayMetaDecorator.prototype.hidePortNames = function (client, nodeObj) {
+    DisplayMetaDecorator.prototype.hidePortNames = function (client) {
         var self = this,
             portTitle = '',
             portId = '',
