@@ -7,7 +7,8 @@
 define([
     'js/Decorators/DecoratorBase',
     './DiagramDesigner/DisplayMetaDecorator.DiagramDesignerWidget',
-    './PartBrowser/DisplayMetaDecorator.PartBrowserWidget'
+    './PartBrowser/DisplayMetaDecorator.PartBrowserWidget',
+    'css!./styles/DisplayMetaDecorator.css'
 ], function (DecoratorBase, DisplayMetaDecoratorDiagramDesignerWidget, DisplayMetaDecoratorPartBrowserWidget) {
 
     'use strict';

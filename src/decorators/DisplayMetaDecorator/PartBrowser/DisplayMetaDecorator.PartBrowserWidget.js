@@ -34,6 +34,7 @@ define([
     /*********************** OVERRIDE DiagramDesignerWidgetDecoratorBase MEMBERS **************************/
 
     DisplayMetaDecoratorPartBrowserWidget.prototype.beforeAppend = function () {
+        this.$el.addClass('display-meta-decorator');
         ModelDecoratorPartBrowserWidget.prototype.beforeAppend.apply(this, arguments);
     };
 

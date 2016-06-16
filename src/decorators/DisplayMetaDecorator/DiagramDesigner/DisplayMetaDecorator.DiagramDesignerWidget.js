@@ -23,6 +23,7 @@ define([
     'use strict';
 
     var DisplayMetaDecorator,
+        PORT_POSITION_OFFSET_Y = 13,
         DECORATOR_ID = 'DisplayMetaDecorator';
 
     DisplayMetaDecorator = function (options) {
@@ -42,15 +43,15 @@ define([
             nodeObj = client.getNode(this._metaInfo[CONSTANTS.GME_ID]);
 
         this.logger.debug('This node was added to the canvas', nodeObj);
-
+        this.$el.addClass('display-meta-decorator');
         // Call the base-class method..
         ModelDecoratorDiagramDesignerWidget.prototype.on_addTo.apply(this, arguments);
 
-        this.addMetaName(client, nodeObj);
-        this.hidePortNames(client, nodeObj);
+        this._addMetaName(client, nodeObj);
+        this._hidePortNames(client, nodeObj);
     };
 
-    DisplayMetaDecorator.prototype.addMetaName = function (client, nodeObj) {
+    DisplayMetaDecorator.prototype._addMetaName = function (client, nodeObj) {
         var self = this,
             metaId = nodeObj.getMetaTypeId(),
             metaNode = client.getNode(metaId),
@@ -65,7 +66,7 @@ define([
         metaNameDiv.insertAfter(this.skinParts.$name);
     };
 
-    DisplayMetaDecorator.prototype.hidePortNames = function (client) {
+    DisplayMetaDecorator.prototype._hidePortNames = function (client) {
         var self = this,
             portTitle = '',
             portId = '',
@@ -114,7 +115,7 @@ define([
         });
     };
 
-    DisplayMetaDecorator.prototype.hidePortName = function (portDiv, client, nodeObj) {
+    DisplayMetaDecorator.prototype._hidePortName = function (portDiv, client, nodeObj) {
         var self = this,
             portTitle = portDiv.attr('title'),
             portId = portDiv.attr('id'),
@@ -140,6 +141,22 @@ define([
         this.logger.debug('This node is on the canvas and received an update event', nodeObj);
 
         ModelDecoratorDiagramDesignerWidget.prototype.update.apply(this, arguments);
+    };
+
+    DisplayMetaDecorator.prototype.getConnectionAreas = function (id/*, isEnd, connectionMetaInfo*/) {
+        var result;
+
+        result = ModelDecoratorDiagramDesignerWidget.prototype.getConnectionAreas.apply(this, arguments);
+        result.forEach(function (connArea) {
+            // Ports have numbered ids..
+            if (typeof connArea.id === 'number') {
+                // for these add compensation for the meta-name div.
+                connArea.y1 += PORT_POSITION_OFFSET_Y;
+                connArea.y2 += PORT_POSITION_OFFSET_Y;
+            }
+        });
+
+        return result;
     };
 
     return DisplayMetaDecorator;

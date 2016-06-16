@@ -1,0 +1,9 @@
+.display-meta-decorator {
+  .meta-name {
+    font-size: 10px;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 120px;
+  }
+}
