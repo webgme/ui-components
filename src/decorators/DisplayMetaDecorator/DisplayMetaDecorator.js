@@ -9,7 +9,10 @@ define([
     './DiagramDesigner/DisplayMetaDecorator.DiagramDesignerWidget',
     './PartBrowser/DisplayMetaDecorator.PartBrowserWidget',
     'css!./styles/DisplayMetaDecorator.css'
-], function (DecoratorBase, DisplayMetaDecoratorDiagramDesignerWidget, DisplayMetaDecoratorPartBrowserWidget) {
+], function (
+    DecoratorBase,
+    DisplayMetaDecoratorDiagramDesignerWidget,
+    DisplayMetaDecoratorPartBrowserWidget) {
 
     'use strict';
 

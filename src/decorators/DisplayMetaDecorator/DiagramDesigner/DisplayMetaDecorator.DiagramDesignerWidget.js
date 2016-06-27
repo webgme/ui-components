@@ -13,12 +13,14 @@ define([
     'js/RegistryKeys',
     'js/Constants',
     'decorators/ModelDecorator/DiagramDesigner/ModelDecorator.DiagramDesignerWidget',
+    './../UtilityFunctions',
     'jquery',
     'underscore'
 ], function (
     REGISTRY_KEYS,
     CONSTANTS,
-    ModelDecoratorDiagramDesignerWidget) {
+    ModelDecoratorDiagramDesignerWidget,
+    UtilityFunctions) {
 
     'use strict';
 
@@ -47,8 +49,11 @@ define([
         // Call the base-class method..
         ModelDecoratorDiagramDesignerWidget.prototype.on_addTo.apply(this, arguments);
 
-        this._addMetaName(client, nodeObj);
-        this._hidePortNames(client, nodeObj);
+        UtilityFunctions.addMetaName(this, client, nodeObj);
+        UtilityFunctions.hidePortNames(this, client);
+
+//        this._addMetaName(client, nodeObj);
+//        this._hidePortNames(client);
     };
 
     DisplayMetaDecorator.prototype._addMetaName = function (client, nodeObj) {
@@ -115,21 +120,6 @@ define([
         });
     };
 
-    DisplayMetaDecorator.prototype._hidePortName = function (portDiv, client, nodeObj) {
-        var self = this,
-            portTitle = portDiv.attr('title'),
-            portId = portDiv.attr('id'),
-            portNode = client.getNode(portId),
-            portMetaId = portNode.getMetaTypeId(),
-            portMetaNode = client.getNode(portMetaId),
-            portMetaName = portMetaNode.getAttribute('name');
-
-        portDiv.attr('title', portTitle + ' <<' + portMetaName + '>>');
-
-        portDiv.find('.title-wrapper').remove();
-
-    };
-
     DisplayMetaDecorator.prototype.destroy = function () {
         ModelDecoratorDiagramDesignerWidget.prototype.destroy.apply(this, arguments);
     };
@@ -141,6 +131,9 @@ define([
         this.logger.debug('This node is on the canvas and received an update event', nodeObj);
 
         ModelDecoratorDiagramDesignerWidget.prototype.update.apply(this, arguments);
+
+        // this causes another <<MetaName>> div to be added every time the model changes
+        UtilityFunctions.addMetaName(this, client, nodeObj);
     };
 
     DisplayMetaDecorator.prototype.getConnectionAreas = function (id/*, isEnd, connectionMetaInfo*/) {
