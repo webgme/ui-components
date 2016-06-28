@@ -10,10 +10,15 @@
  */
 
 define([
+    'js/Constants',
     'decorators/ModelDecorator/PartBrowser/ModelDecorator.PartBrowserWidget',
+    './../UtilityFunctions',
     'jquery',
     'underscore'
-], function (ModelDecoratorPartBrowserWidget) {
+], function (
+    CONSTANTS,
+    ModelDecoratorPartBrowserWidget,
+    UtilityFunctions) {
 
     'use strict';
 
@@ -43,7 +48,12 @@ define([
     };
 
     DisplayMetaDecoratorPartBrowserWidget.prototype.update = function () {
+        var client = this._control._client,
+            nodeObj = client.getNode(this._metaInfo[CONSTANTS.GME_ID]);
+
         ModelDecoratorPartBrowserWidget.prototype.afterAppend.apply(this, arguments);
+
+        UtilityFunctions.updateMetaNameDiv(this, client, nodeObj);
     };
 
     return DisplayMetaDecoratorPartBrowserWidget;

@@ -46,78 +46,11 @@ define([
 
         this.logger.debug('This node was added to the canvas', nodeObj);
         this.$el.addClass('display-meta-decorator');
-        // Call the base-class method..
+        // Call the base-class method...
         ModelDecoratorDiagramDesignerWidget.prototype.on_addTo.apply(this, arguments);
 
-        UtilityFunctions.addMetaName(this, client, nodeObj);
+        UtilityFunctions.updateMetaNameDiv(this, client, nodeObj);
         UtilityFunctions.hidePortNames(this, client);
-
-//        this._addMetaName(client, nodeObj);
-//        this._hidePortNames(client);
-    };
-
-    DisplayMetaDecorator.prototype._addMetaName = function (client, nodeObj) {
-        var self = this,
-            metaId = nodeObj.getMetaTypeId(),
-            metaNode = client.getNode(metaId),
-            metaName = metaNode.getAttribute('name'),
-            divString = '<<' + metaName + '>>',
-            metaNameDiv = $('<div>', {
-            class: 'meta-name',
-            title: divString,
-            text: divString
-        });
-
-        metaNameDiv.insertAfter(this.skinParts.$name);
-    };
-
-    DisplayMetaDecorator.prototype._hidePortNames = function (client) {
-        var self = this,
-            portTitle = '',
-            portId = '',
-            portNode = '',
-            portMetaId = '',
-            portMetaNode = '',
-            portMetaName = '';
-
-        this.skinParts.$portsContainerLeft.find('.port').each(function() {
-            portTitle = $(this).attr('title');
-            portId = $(this).attr('id');
-            portNode = client.getNode(portId);
-            portMetaId = portNode.getMetaTypeId();
-            portMetaNode = client.getNode(portMetaId);
-            portMetaName = portMetaNode.getAttribute('name');
-
-            $(this).attr('title', portTitle + ' <<' + portMetaName + '>>');
-
-            $(this).find('.title-wrapper').remove();
-        });
-
-        this.skinParts.$portsContainerCenter.find('.port').each(function() {
-            portTitle = $(this).attr('title');
-            portId = $(this).attr('id');
-            portNode = client.getNode(portId);
-            portMetaId = portNode.getMetaTypeId();
-            portMetaNode = client.getNode(portMetaId);
-            portMetaName = portMetaNode.getAttribute('name');
-
-            $(this).attr('title', portTitle + ' <<' + portMetaName + '>>');
-
-            $(this).find('.title-wrapper').remove();
-        });
-
-        this.skinParts.$portsContainerRight.find('.port').each(function() {
-            portTitle = $(this).attr('title');
-            portId = $(this).attr('id');
-            portNode = client.getNode(portId);
-            portMetaId = portNode.getMetaTypeId();
-            portMetaNode = client.getNode(portMetaId);
-            portMetaName = portMetaNode.getAttribute('name');
-
-            $(this).attr('title', portTitle + ' <<' + portMetaName + '>>');
-
-            $(this).find('.title-wrapper').remove();
-        });
     };
 
     DisplayMetaDecorator.prototype.destroy = function () {
@@ -133,7 +66,8 @@ define([
         ModelDecoratorDiagramDesignerWidget.prototype.update.apply(this, arguments);
 
         // this causes another <<MetaName>> div to be added every time the model changes
-        UtilityFunctions.addMetaName(this, client, nodeObj);
+        UtilityFunctions.updateMetaNameDiv(this, client, nodeObj);
+        UtilityFunctions.hidePortNames(this, client);
     };
 
     DisplayMetaDecorator.prototype.getConnectionAreas = function (id/*, isEnd, connectionMetaInfo*/) {
