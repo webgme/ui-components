@@ -51,9 +51,16 @@ define([
         var client = this._control._client,
             nodeObj = client.getNode(this._metaInfo[CONSTANTS.GME_ID]);
 
-        ModelDecoratorPartBrowserWidget.prototype.afterAppend.apply(this, arguments);
+        ModelDecoratorPartBrowserWidget.prototype.update.apply(this, arguments);
 
         UtilityFunctions.updateMetaNameDiv(this, client, nodeObj);
+    };
+
+    DisplayMetaDecoratorPartBrowserWidget.prototype._updateColors = function () {
+        ModelDecoratorPartBrowserWidget.prototype._updateColors.apply(this, arguments);
+        if (!this.fillColor) {
+            this.$el.css({'background-color': 'white'});
+        }
     };
 
     return DisplayMetaDecoratorPartBrowserWidget;

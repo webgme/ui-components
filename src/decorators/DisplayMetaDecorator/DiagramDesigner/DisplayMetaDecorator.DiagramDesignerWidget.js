@@ -86,5 +86,12 @@ define([
         return result;
     };
 
+    DisplayMetaDecorator.prototype._updateColors = function () {
+        ModelDecoratorDiagramDesignerWidget.prototype._updateColors.apply(this, arguments);
+        if (!this.fillColor) {
+            this.$el.css({'background-color': 'white'});
+        }
+    };
+
     return DisplayMetaDecorator;
 });
