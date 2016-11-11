@@ -8,7 +8,16 @@
     "src": ""
   },
   "disableServerSideExecution": false,
-  "disableBrowserSideExecution": false,
+  "disableBrowserSideExecution": true,
   "writeAccessRequired": false,
-  "configStructure": []
+  "configStructure": [
+    {
+      "name": "modelZip",
+      "displayName": "Exported Models",
+      "description": "Add .webgmexm file",
+      "value": "",
+      "valueType": "asset",
+      "readOnly": false
+    }
+  ]
 }

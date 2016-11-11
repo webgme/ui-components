@@ -10,11 +10,15 @@
 define([
     'plugin/PluginConfig',
     'text!./metadata.json',
-    'plugin/PluginBase'
+    'plugin/PluginBase',
+    'jszip',
+    'common/storage/util'
 ], function (
     PluginConfig,
     pluginMetadata,
-    PluginBase) {
+    PluginBase,
+    jszip,
+    storageUtil) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
@@ -50,41 +54,124 @@ define([
      * - Do NOT put any user interaction logic UI, etc. inside this method.
      * - callback always has to be called even if error happened.
      *
-     * @param {function(string, plugin.PluginResult)} callback - the result callback
+     * @param {function(string|Error|null, plugin.PluginResult)} callback - the result callback
      */
     ImportModels.prototype.main = function (callback) {
         // Use self to access core, project, result, logger etc from PluginBase.
         // These are all instantiated at this point.
         var self = this,
-            nodeObject;
+            config = this.getCurrentConfig(),
+            zipHash = config.modelZip || '7ee240962a78962fce20c679911fa01682fefabd',
+            projectJson;
 
+        // Initially get the content of the uploaded zip file.
+        self.blobClient.getObject(zipHash)
+            .then(function (zipContent) {
+                var zip = new jszip(zipContent),
+                    zipFile = zip.file('project.json');
 
-        // Using the logger.
-        self.logger.debug('This is a debug message.');
-        self.logger.info('This is an info message.');
-        self.logger.warn('This is a warning message.');
-        self.logger.error('This is an error message.');
+                // Extract the project.json from the zip.
+                // TODO: Handle the assets using blobUtil.. (If attempted to import normally they are already
+                // TODO: uploaded to the blob and nothing needs to be done).
+                if (zipFile) {
+                    projectJson = JSON.parse(zipFile.asText());
+                } else {
+                    throw new Error('No project.json found among' + JSON.stringify(Object.keys(zip.files())));
+                }
 
-        // Using the coreAPI to make changes.
+                self.logger.info('Found project json in zip file');
 
-        nodeObject = self.activeNode;
-
-        self.core.setAttribute(nodeObject, 'name', 'My new obj');
-        self.core.setRegistry(nodeObject, 'position', {x: 70, y: 70});
-
-
-        // This will save the changes. If you don't want to save;
-        // exclude self.save and call callback directly from this scope.
-        self.save('ImportModels updated model.')
+                // Insert the data-objects into the storage/database.
+                return storageUtil.insertProjectJson(self.project, { rootHash: null, objects: projectJson.objects},
+                    {commitMessage: 'dummy commit for inserting the data-objects'});
+            })
             .then(function () {
+                // At this point we know all the data was inserted into the data-base.
+                var closureInfo = projectJson.selectionInfo,
+                    mapInfo,
+                    baseRelInfo,
+                    importResult,
+                    key;
+
+                self.logger.info(JSON.stringify(closureInfo));
+
+                mapInfo = self.getMappedBases(closureInfo.bases);
+
+                // Overwrite the bases field with the one fitting to this project
+                closureInfo.bases = mapInfo.bases;
+
+                // Update the base relations to fit this model.
+                for (key in closureInfo.relations.preserved) {
+                    baseRelInfo = closureInfo.relations.preserved[key];
+                    if (baseRelInfo.base && mapInfo.orgToActual[baseRelInfo.base]) {
+                        baseRelInfo.base = mapInfo.orgToActual[baseRelInfo.base];
+                    }
+                }
+
+                // Now using the new base mappings import the models under the activeNode
+                importResult = self.core.importClosure(self.activeNode, closureInfo);
+
+                if (importResult instanceof Error) {
+                    throw importResult;
+                }
+
+                // There was no error, save the current model.
+                return self.save('Imported models from webgmex-file');
+            })
+            .then(function (commitResult) {
+                self.logger.info('Made commit:', JSON.stringify(commitResult, null, 2));
                 self.result.setSuccess(true);
                 callback(null, self.result);
             })
             .catch(function (err) {
-                // Result success is false at invocation.
+                self.logger.error(err.stack);
                 callback(err, self.result);
             });
+    };
 
+    ImportModels.prototype.getMappedBases = function (originalBases) {
+        var guidToMetaNode = {},
+            nameToMetaGuid = {},
+            result = {
+                bases: {},
+                orgToActual: {}
+            },
+            metaNode,
+            guid,
+            key;
+
+        // First we build of some info about what the current meta contains.
+        for (key in this.META) {
+            metaNode = this.META[key];
+            guid = this.core.getGuid(metaNode);
+            guidToMetaNode[guid] = metaNode;
+            // TODO: This only matches based on name, it could be extended with core.getFullyQualifiedName(metaNode);
+            // TODO: And even with more elaborate namespacing..
+            nameToMetaGuid[this.core.getAttribute(metaNode, 'name')] = guid;
+        }
+
+        // Now we map the originalBases to our meta. The rule here is that if the guid does not exist -
+        // we check if the current meta has at least the name and use that instead.
+        for (key in originalBases) {
+            // key is the guid of the original base as is in that project.
+            if (guidToMetaNode[key]) {
+                // The guid exists among the current meta - we can use it as is.
+                result.bases[key] = {}; // We know it exists and don't have to provide additional data
+            } else if (nameToMetaGuid[originalBases[key].name]) {
+                // The current meta contains the name. We are satisfied with that..
+                // We know it exists and don't have to provide additional data
+                result.bases[nameToMetaGuid[originalBases[key].name]] = {};
+                result.orgToActual[key] = nameToMetaGuid[originalBases[key].name];
+
+                this.logger.warn('Could not find exact guid of META-node', originalBases[key].name,
+                    'but found same name.');
+            } else {
+                // TODO: Here more advanced rules can be added
+                throw new Error('Could not find suiting META-node for base ' + JSON.stringify(originalBases[key]));
+            }
+        }
+
+        return result;
     };
 
     return ImportModels;
