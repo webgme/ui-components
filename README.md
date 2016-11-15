@@ -1,6 +1,10 @@
 ## TODO: Rename this repo to components
 
-# ui-components
-A collection of domain independent webgme ui-components
+# Components
+A collection of domain independent webgme components
 
-* DisplayMetaDecorator
+### Decorators
+* DisplayMetaDecorator - 
+
+### Plugins
+* ImportModel
