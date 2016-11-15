@@ -4,7 +4,7 @@
 A collection of domain independent webgme components
 
 ### Decorators
-* DisplayMetaDecorator - 
+* DisplayMetaDecorator - Based on ModelDecorator but also displays the meta-type of the object and ports.
 
 ### Plugins
-* ImportModel
+* ImportModels - Example plugin for using the ModelImport API but with custom matching of bases.
