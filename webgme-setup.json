@@ -4,9 +4,16 @@
       "DisplayMetaDecorator": {
         "src": "src/decorators/DisplayMetaDecorator"
       }
+    },
+    "plugins": {
+      "ImportModels": {
+        "src": "src/plugins/ImportModels",
+        "test": "test/plugins/ImportModels"
+      }
     }
   },
   "dependencies": {
-    "decorators": {}
+    "decorators": {},
+    "plugins": {}
   }
 }
