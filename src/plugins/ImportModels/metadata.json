@@ -8,8 +8,8 @@
     "src": ""
   },
   "disableServerSideExecution": false,
-  "disableBrowserSideExecution": true,
-  "writeAccessRequired": false,
+  "disableBrowserSideExecution": false,
+  "writeAccessRequired": true,
   "configStructure": [
     {
       "name": "modelZip",
