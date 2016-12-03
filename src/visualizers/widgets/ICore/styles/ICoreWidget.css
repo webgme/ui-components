@@ -3,5 +3,29 @@
  */
 .i-core-widget {
   outline: none; }
+  .i-core-widget.vertical-orientation {
+    display: inline-flex; }
+    .i-core-widget.vertical-orientation .code-editor {
+      height: 100%;
+      width: 50%; }
+    .i-core-widget.vertical-orientation .console-window {
+      height: 100%;
+      width: 50%; }
+  .i-core-widget.horizontal-orientation {
+    display: block; }
+    .i-core-widget.horizontal-orientation .code-editor {
+      height: 50%;
+      width: 100%; }
+    .i-core-widget.horizontal-orientation .console-window {
+      height: 50%;
+      width: 100%; }
+  .i-core-widget .console-window span.cm-debug {
+    color: #0b93d5; }
+  .i-core-widget .console-window span.cm-info {
+    color: #23b729; }
+  .i-core-widget .console-window span.cm-warn {
+    color: #ece706; }
+  .i-core-widget .console-window span.cm-error-log {
+    color: #b51313; }
 
 /*# sourceMappingURL=ICoreWidget.css.map */

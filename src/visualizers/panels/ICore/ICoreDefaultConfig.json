@@ -1,0 +1,27 @@
+{
+  "templates": {
+    "coreTraverse": {
+      "displayName": "Traverse Model",
+      "description": "Illustrates how to use core.traverse",
+      "script": "",
+      "default": false
+    },
+    "blobClient": {
+      "displayName": "Storing Files",
+      "description": "Illustrates how to use core.traverse",
+      "script": "",
+      "default": false
+    }
+  },
+  "consoleWindow": {
+    "horizontal": true,
+    "space": "50%",
+    "timestamps": false,
+    "logLevel": "info",
+    "clearBeforeExecution": true
+  },
+  "codeEditor": {
+    "autoSave": false,
+    "theme": null
+  }
+}

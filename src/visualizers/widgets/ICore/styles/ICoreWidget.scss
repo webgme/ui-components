@@ -4,4 +4,41 @@
 
 .i-core-widget {
   outline: none;
+  &.vertical-orientation {
+    display: inline-flex;
+    .code-editor {
+      height: 100%;
+      width: 50%;
+    }
+    .console-window {
+      height: 100%;
+      width: 50%;
+    }
+  }
+  &.horizontal-orientation {
+    display: block;
+    .code-editor {
+      height: 50%;
+      width: 100%;
+    }
+    .console-window {
+      height: 50%;
+      width: 100%;
+    }
+  }
+
+  .console-window {
+    span.cm-debug {
+      color: #0b93d5;
+    }
+    span.cm-info {
+      color: #23b729;
+    }
+    span.cm-warn {
+      color: #ece706;
+    }
+    span.cm-error-log {
+      color: #b51313;
+    }
+  }
 }

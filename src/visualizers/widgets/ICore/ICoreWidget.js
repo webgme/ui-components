@@ -8,7 +8,7 @@
 define([
     'codemirror/lib/codemirror',
     'jquery',
-    'css!codemirror/lib/codemirror.css',
+    './ICoreConsoleCodeMirrorMode',
     'css!./styles/ICoreWidget.css'
 ], function (codeMirror) {
     'use strict';
@@ -40,16 +40,23 @@ define([
             },
             consoleWindowOptions = {
                 value: '',
-                readOnly: true
+                mode: 'ICoreConsole',
+                readOnly: true,
+                lineWrapping: true,
+                theme: 'monokai'
             };
 
         // set widget class
         this._el.addClass(WIDGET_CLASS);
+        this._verticalOrientation = true;
+        this._el.addClass('vertical-orientation');
 
         this._codeEditor = codeMirror(this._el[0], codeEditorOptions);
+        $(this._codeEditor.getWrapperElement()).addClass('code-editor');
         // There is probably something more fancy to use here..
         this._consoleWindow = codeMirror(this._el[0], consoleWindowOptions);
-        this._consoleStr = '';
+        $(this._consoleWindow.getWrapperElement()).addClass('console-window');
+        this._consoleStr = 'Use the logger to print here (e.g. this.logger.info)';
     };
 
     // Adding/Removing/Updating items
@@ -60,6 +67,8 @@ define([
             this._codeEditor.setValue("// No scriptCode attribute defined. Changes will not be persisted\nfunction (callback) {\n \tvar activeNode = this.activeNode,\n      core = this.core,\n      logger = this.logger;\n  \n  logger.info('Current node name:', core.getAttribute(activeNode, 'name'));\n}");
         }
 
+        this._consoleWindow.setValue(this._consoleStr);
+        this._consoleWindow.refresh();
         this._codeEditor.refresh();
     };
 
@@ -80,7 +89,11 @@ define([
     ICoreWidget.prototype.addConsoleMessage = function (level, logPieces) {
         var scrollInfo;
 
-        this._consoleStr += '\n ' + level + ':  ' + logPieces.map(function (arg) {
+        level = level.length === 5 ? level : level + ' ';
+        level = this._consoleStr.length === 0 ? level : '\n' + level;
+        level += ': ';
+
+        this._consoleStr += level + logPieces.map(function (arg) {
                 return typeof arg === 'string' ? arg : JSON.stringify(arg);
             }).join(' ');
 
@@ -96,13 +109,25 @@ define([
         this._consoleWindow.setValue(this._consoleStr);
     };
 
+    ICoreWidget.prototype.switchOrientation = function () {
+        this._verticalOrientation = !this._verticalOrientation;
+
+        if (this._verticalOrientation) {
+            this._el.addClass('vertical-orientation');
+            this._el.removeClass('horizontal-orientation');
+        } else {
+            this._el.addClass('horizontal-orientation');
+            this._el.removeClass('vertical-orientation');
+        }
+    };
+
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     ICoreWidget.prototype.onWidgetContainerResize = function (width, height) {
         this._logger.debug('Widget is resizing...');
     };
 
     ICoreWidget.prototype.destroy = function () {
-        
+
     };
 
     ICoreWidget.prototype.onActivate = function () {

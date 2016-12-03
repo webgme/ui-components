@@ -8,12 +8,14 @@ define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
     'widgets/ICore/ICoreWidget',
-    './ICoreControl'
+    './ICoreControl',
+    'text!./ICoreDefaultConfig.json'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
     ICoreWidget,
-    ICoreControl) {
+    ICoreControl,
+    ICoreDefaultConfig) {
 
     'use strict';
 
@@ -39,6 +41,14 @@ define([
     //inherit from PanelBaseWithHeader
     _.extend(ICorePanel.prototype, PanelBaseWithHeader.prototype);
     _.extend(ICorePanel.prototype, IActivePanel.prototype);
+
+    ICorePanel.getComponentId = function () {
+        return 'ICorePanel';
+    };
+
+    ICorePanel.getDefaultConfig = function () {
+        return JSON.parse(ICoreDefaultConfig);
+    };
 
     ICorePanel.prototype._initialize = function () {
         var self = this;

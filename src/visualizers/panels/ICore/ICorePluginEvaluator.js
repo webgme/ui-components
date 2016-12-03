@@ -1,13 +1,17 @@
 /*globals define*/
 /**
+ * Evaluates the code from the widget and creates and calls a plugin
+ *
  * @author pmeijer / https://github.com/pmeijer
  */
 
 define([
     'plugin/managerbase',
     'plugin/PluginBase',
+    'plugin/PluginResult',
+    'js/Dialogs/PluginResults/PluginResultsDialog',
     'blob/BlobClient'
-], function (PluginManager, PluginBase, BlobClient) {
+], function (PluginManager, PluginBase, PluginResult, PluginResultsDialog, BlobClient) {
     'use strict';
 
     var PLUGIN_META_DATA = {
@@ -25,35 +29,34 @@ define([
         configStructure: []
     };
 
-    function PluginEvaluator() {
+    function ICorePluginEvaluator() {
 
     }
 
-    PluginEvaluator.prototype.evaluateCode = function (callback) {
+    ICorePluginEvaluator.prototype.evaluateCode = function (callback) {
         var self = this,
             code = this._widget.getCode(),
+            startTime = (new Date()).toISOString(),
             blobClient,
             plugin,
             pluginManager,
             context,
-            logger,
-            mainFn;
+            logger;
+
+        plugin = new PluginBase();
 
         try {
-            eval('mainFn = ' + code + ';');
+            eval('plugin.main = ' + code + ';');
         } catch (e) {
             callback(e);
             return;
         }
 
-        if (typeof mainFn !== 'function') {
+        if (typeof plugin.main !== 'function') {
             callback(new Error('Evaluated code does not define a function'));
             return;
         }
 
-        // The main function is "OK" we instantiate the plugin
-        plugin = new PluginBase();
-        plugin.main = mainFn;
         plugin.pluginMetadata = PLUGIN_META_DATA;
 
         // initialize the plugin
@@ -90,14 +93,34 @@ define([
 
         pluginManager.configurePlugin(plugin, context.pluginConfig, context.managerConfig)
             .then(function () {
-                plugin.main(function (err) {
+                plugin.main(function (err, pluginResult) {
+                    var dialog,
+                        resultError = 'this.result.success was false but no error given. ' +
+                            'To indicate success invoke this.result.setSuccess(true)';
+                    if (err) {
+                        if (typeof err === 'string') {
+                            err = new Error('[String was passed in callback, always resolve with Error] ' + err);
+                        }
+
+                        resultError = err.message;
+                    }
+
+                    if (pluginResult && pluginResult instanceof PluginResult) {
+                        pluginResult.setFinishTime((new Date()).toISOString());
+                        pluginResult.setStartTime(startTime);
+                        pluginResult.setPluginName('ICore plugin');
+                        pluginResult.setError(resultError);
+                        dialog = new PluginResultsDialog();
+                        dialog.show(self._client, [pluginResult]);
+                    }
+
                     callback(err);
                 });
             })
             .catch(callback);
     };
 
-    PluginEvaluator.prototype._getPluginContext = function () {
+    ICorePluginEvaluator.prototype._getPluginContext = function () {
         var client = this._client;
         return {
             managerConfig: {
@@ -112,5 +135,5 @@ define([
         };
     };
 
-    return PluginEvaluator;
+    return ICorePluginEvaluator;
 });

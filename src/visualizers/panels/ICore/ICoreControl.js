@@ -6,8 +6,8 @@
 
 define([
     'js/Constants',
-    './PluginEvaluator'
-], function (CONSTANTS, PluginEvaluator) {
+    './ICorePluginEvaluator'
+], function (CONSTANTS, ICorePluginEvaluator) {
 
     'use strict';
 
@@ -20,7 +20,7 @@ define([
      * @constructor
      */
     function ICoreControl(options) {
-        PluginEvaluator.call(this);
+        ICorePluginEvaluator.call(this);
         this._logger = options.logger.fork('Control');
 
         this._client = options.client;
@@ -32,8 +32,8 @@ define([
         this._logger.debug('ctor finished');
     }
 
-    // Prototypical inheritance from PluginEvaluator.
-    ICoreControl.prototype = Object.create(PluginEvaluator.prototype);
+    // Prototypical inheritance from ICorePluginEvaluator.
+    ICoreControl.prototype = Object.create(ICorePluginEvaluator.prototype);
     ICoreControl.prototype.constructor = ICoreControl;
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
@@ -202,6 +202,7 @@ define([
 
         this._toolbarItems.push(toolBar.addSeparator());
 
+        // Settings
         this.$btnSettings = toolBar.addButton({
             title: 'ICore Settings',
             icon: 'glyphicon glyphicon-cog',
@@ -212,33 +213,65 @@ define([
 
         this._toolbarItems.push(this.$btnSettings);
 
+        // Save
         this.$btnSave = toolBar.addButton({
             title: 'Save Code',
             icon: 'glyphicon glyphicon-floppy-disk',
             clickFn: function (/*data*/) {
+                var node,
+                    editorCode;
                 if (typeof self._currentNodeId === 'string') {
-                    self._client.setAttribute(self._currentNodeId, SCRIPT_CODE_ATTR_NAME, self._widget.getCode(),
-                        'ICoreControl updated [' + self._currentNodeId + '] attribute' + SCRIPT_CODE_ATTR_NAME +
-                        ' with new value.');
+                    node = self._client.getNode(self._currentNodeId);
+                    editorCode = self._widget.getCode();
+                    if (node && node.getOwnAttribute(SCRIPT_CODE_ATTR_NAME) !== editorCode) {
+                        self._client.setAttribute(self._currentNodeId, SCRIPT_CODE_ATTR_NAME, self._widget.getCode(),
+                            'ICoreControl updated [' + self._currentNodeId + '] attribute' + SCRIPT_CODE_ATTR_NAME +
+                            ' with new value.');
+                    }
                 }
             }
         });
 
         this._toolbarItems.push(this.$btnSave);
 
+        // Execute
         this.$btnExecute = toolBar.addButton({
             title: 'Execute code',
             icon: 'glyphicon glyphicon-play-circle',
             clickFn: function (/*data*/) {
                 self.evaluateCode(function (err) {
                     if (err) {
-                        console.log(err);
+                        self._widget.addConsoleMessage('error', ['Execution failed with error:', err.stack]);
+                    } else {
+                        self._widget.addConsoleMessage('info', ['Execution finished!']);
                     }
                 });
             }
         });
 
         this._toolbarItems.push(this.$btnExecute);
+
+        // Orientation
+        this.$btnOrientation = toolBar.addButton({
+            title: 'Toggle Orientation',
+            icon: 'fa fa-columns',
+            clickFn: function (/*data*/) {
+                self._widget.switchOrientation();
+            }
+        });
+
+        this._toolbarItems.push(this.$btnOrientation);
+
+        // Clear console
+        this.$btnClearConsole = toolBar.addButton({
+            title: 'Clear Console',
+            icon: 'fa fa-ban',
+            clickFn: function (/*data*/) {
+                self._widget.clearConsole();
+            }
+        });
+
+        this._toolbarItems.push(this.$btnClearConsole);
 
         this._toolbarInitialized = true;
     };
