@@ -14,19 +14,41 @@ define([
     'use strict';
 
     var ICoreWidget,
-        WIDGET_CLASS = 'i-core-widget';
+        WIDGET_CLASS = 'i-core-widget',
+        LOG_LEVELS = {
+            debug: 0,
+            info: 1,
+            warn: 2,
+            error: 3
+        };
 
-    ICoreWidget = function (logger, container) {
+
+    ICoreWidget = function (logger, container, config) {
+        var templateId;
         this._logger = logger.fork('Widget');
 
         this._el = container;
+        this._logLevel = LOG_LEVELS[config.consoleWindow.logLevel] || 0;
+        this._templates = config.templates;
+        this._defaultTemplateId = null;
 
-        this._initialize();
+        for (templateId in this._templates) {
+            if (this._templates[templateId].default) {
+                this._defaultTemplateId = templateId;
+                break;
+            }
+        }
+
+        if (!this._defaultTemplateId) {
+            this._logger.warn('No default template defined!');
+        }
+
+        this._initialize(config);
 
         this._logger.debug('ctor finished');
     };
 
-    ICoreWidget.prototype._initialize = function () {
+    ICoreWidget.prototype._initialize = function (config) {
         var width = this._el.width(),
             height = this._el.height(),
             self = this,
@@ -48,8 +70,9 @@ define([
 
         // set widget class
         this._el.addClass(WIDGET_CLASS);
-        this._verticalOrientation = true;
-        this._el.addClass('vertical-orientation');
+
+        this._verticalOrientation = !config.consoleWindow.verticalOrientation;
+        this.switchOrientation();
 
         this._codeEditor = codeMirror(this._el[0], codeEditorOptions);
         $(this._codeEditor.getWrapperElement()).addClass('code-editor');
@@ -57,14 +80,17 @@ define([
         this._consoleWindow = codeMirror(this._el[0], consoleWindowOptions);
         $(this._consoleWindow.getWrapperElement()).addClass('console-window');
         this._consoleStr = 'Use the logger to print here (e.g. this.logger.info)';
+        this._logs = [];
     };
 
     // Adding/Removing/Updating items
     ICoreWidget.prototype.addNode = function (desc) {
         if (typeof desc.scriptCode === 'string') {
             this._codeEditor.setValue(desc.scriptCode);
+        } else if (typeof this._defaultTemplateId === 'string'){
+            this._codeEditor.setValue(this._templates[this._defaultTemplateId].script);
         } else {
-            this._codeEditor.setValue("// No scriptCode attribute defined. Changes will not be persisted\nfunction (callback) {\n \tvar activeNode = this.activeNode,\n      core = this.core,\n      logger = this.logger;\n  \n  logger.info('Current node name:', core.getAttribute(activeNode, 'name'));\n}");
+            this._codeEditor.setValue('');
         }
 
         this._consoleWindow.setValue(this._consoleStr);
@@ -87,26 +113,66 @@ define([
     };
 
     ICoreWidget.prototype.addConsoleMessage = function (level, logPieces) {
-        var scrollInfo;
-
-        level = level.length === 5 ? level : level + ' ';
-        level = this._consoleStr.length === 0 ? level : '\n' + level;
-        level += ': ';
-
-        this._consoleStr += level + logPieces.map(function (arg) {
+        var scrollInfo,
+            timestamp = Date.now(),
+            logMessage = logPieces.map(function (arg) {
                 return typeof arg === 'string' ? arg : JSON.stringify(arg);
-            }).join(' ');
+            }).join(' '),
+            logData = {
+                level: level,
+                timestamp: timestamp,
+                message: logMessage
+            };
+
+        this._logs.push(logData);
+
+        if (this._logMessage(logData)) {
+            this._consoleWindow.setValue(this._consoleStr);
+            scrollInfo = this._consoleWindow.getScrollInfo();
+            this._consoleWindow.scrollTo(scrollInfo.left, scrollInfo.height);
+        }
+    };
+
+    ICoreWidget.prototype._logMessage = function (logData) {
+        var didLog = false,
+            level = logData.level;
+
+        if (LOG_LEVELS[level] >= this._logLevel) {
+            level = level.length === 5 ? level : level + ' ';
+            level = this._consoleStr.length === 0 ? level : '\n' + level;
+
+            this._consoleStr += level + ': ' + logData.message;
+
+            didLog = true;
+        }
+
+        return didLog;
+    };
+
+    ICoreWidget.prototype.setLogLevel = function (level) {
+        var i,
+            scrollInfo;
+
+        if (LOG_LEVELS[level] === this._logLevel) {
+            return;
+        }
+
+        this._logLevel = LOG_LEVELS[level];
+        this._consoleStr = '';
+
+        for (i = 0; i < this._logs.length; i += 1) {
+            this._logMessage(this._logs[i]);
+        }
 
         this._consoleWindow.setValue(this._consoleStr);
-
         scrollInfo = this._consoleWindow.getScrollInfo();
-
         this._consoleWindow.scrollTo(scrollInfo.left, scrollInfo.height);
     };
 
     ICoreWidget.prototype.clearConsole = function () {
         this._consoleStr = '';
         this._consoleWindow.setValue(this._consoleStr);
+        this._logs = [];
     };
 
     ICoreWidget.prototype.switchOrientation = function () {
@@ -119,6 +185,16 @@ define([
             this._el.addClass('horizontal-orientation');
             this._el.removeClass('vertical-orientation');
         }
+    };
+
+    ICoreWidget.prototype.loadTemplate = function (id) {
+        var template = this._templates[id];
+
+        this._codeEditor.setValue(template.script);
+        this._consoleWindow.setValue(template.description);
+
+        this._consoleWindow.refresh();
+        this._codeEditor.refresh();
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */

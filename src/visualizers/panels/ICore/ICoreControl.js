@@ -6,8 +6,9 @@
 
 define([
     'js/Constants',
-    './ICorePluginEvaluator'
-], function (CONSTANTS, ICorePluginEvaluator) {
+    './ICorePluginEvaluator',
+    'js/Toolbar/ToolbarDropDownButton'
+], function (CONSTANTS, ICorePluginEvaluator, ToolbarDropDownButton) {
 
     'use strict';
 
@@ -24,6 +25,7 @@ define([
         this._logger = options.logger.fork('Control');
 
         this._client = options.client;
+        this._config = options.config;
 
         // Initialize core collections and variables
         this._widget = options.widget;
@@ -213,6 +215,32 @@ define([
 
         this._toolbarItems.push(this.$btnSettings);
 
+        // Load template
+        var templateIds = Object.keys(this._config.templates).sort();
+
+        if (templateIds.length > 0) {
+            this.$btnLoadTemplate = toolBar.addDropDownButton({
+                title: 'Load template',
+                icon: 'glyphicon glyphicon-floppy-open',
+                menuClass: 'no-min-width',
+                clickFn: function () {
+                    self.$btnLoadTemplate.clear();
+                    templateIds.forEach(function (templateId) {
+                        var template = self._config.templates[templateId];
+                        self.$btnLoadTemplate.addButton({
+                            title: template.description,
+                            text: template.displayName,
+                            clickFn: function () {
+                                self._widget.loadTemplate(templateId);
+                            }
+                        });
+                    });
+                }
+            });
+
+            this._toolbarItems.push(this.$btnLoadTemplate);
+        }
+
         // Save
         this.$btnSave = toolBar.addButton({
             title: 'Save Code',
@@ -234,6 +262,53 @@ define([
 
         this._toolbarItems.push(this.$btnSave);
 
+        this._toolbarItems.push(toolBar.addSeparator());
+
+        // Orientation
+        this.$btnOrientation = toolBar.addButton({
+            title: 'Toggle Orientation',
+            icon: 'fa fa-columns',
+            clickFn: function (/*data*/) {
+                self._widget.switchOrientation();
+            }
+        });
+
+        this._toolbarItems.push(this.$btnOrientation);
+
+        // Set log-level
+        this.$btnSetLogLevel = toolBar.addDropDownButton({
+            title: 'Console Log Level',
+            icon: 'glyphicon glyphicon-filter',
+            menuClass: 'no-min-width',
+            clickFn: function () {
+                self.$btnSetLogLevel.clear();
+                ['debug', 'info', 'warn', 'error'].forEach(function (level) {
+                    self.$btnSetLogLevel.addButton({
+                        title: 'Click to select level',
+                        text: level,
+                        clickFn: function () {
+                            self._widget.setLogLevel(level);
+                        }
+                    });
+                });
+            }
+        });
+
+        this._toolbarItems.push(this.$btnSetLogLevel);
+
+        // Clear console
+        this.$btnClearConsole = toolBar.addButton({
+            title: 'Clear Console',
+            icon: 'fa fa-ban',
+            clickFn: function (/*data*/) {
+                self._widget.clearConsole();
+            }
+        });
+
+        this._toolbarItems.push(this.$btnClearConsole);
+
+        this._toolbarItems.push(toolBar.addSeparator());
+
         // Execute
         this.$btnExecute = toolBar.addButton({
             title: 'Execute code',
@@ -251,27 +326,7 @@ define([
 
         this._toolbarItems.push(this.$btnExecute);
 
-        // Orientation
-        this.$btnOrientation = toolBar.addButton({
-            title: 'Toggle Orientation',
-            icon: 'fa fa-columns',
-            clickFn: function (/*data*/) {
-                self._widget.switchOrientation();
-            }
-        });
-
-        this._toolbarItems.push(this.$btnOrientation);
-
-        // Clear console
-        this.$btnClearConsole = toolBar.addButton({
-            title: 'Clear Console',
-            icon: 'fa fa-ban',
-            clickFn: function (/*data*/) {
-                self._widget.clearConsole();
-            }
-        });
-
-        this._toolbarItems.push(this.$btnClearConsole);
+        this._toolbarItems.push(toolBar.addSeparator());
 
         this._toolbarInitialized = true;
     };

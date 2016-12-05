@@ -3,21 +3,26 @@
     "coreTraverse": {
       "displayName": "Traverse Model",
       "description": "Illustrates how to use core.traverse",
-      "script": "",
+      "script": "// Traverse model",
       "default": false
     },
     "blobClient": {
       "displayName": "Storing Files",
-      "description": "Illustrates how to use core.traverse",
-      "script": "",
+      "description": "Shows how to use the blob-client and link to the artifacts in the result.",
+      "script": "// Blob client",
       "default": false
+    },
+    "activeNode": {
+      "displayName": "Log name attribute",
+      "description": "Minimal example logging the name of the active node.",
+      "script": "function (callback) {\n \tvar activeNode = this.activeNode,\n      core = this.core,\n      logger = this.logger;\n  \n  logger.info('Current node name:', core.getAttribute(activeNode, 'name'));\n  callback();\n}",
+      "default": true
     }
   },
   "consoleWindow": {
-    "horizontal": true,
+    "verticalOrientation": true,
     "space": "50%",
-    "timestamps": false,
-    "logLevel": "info",
+    "logLevel": "debug",
     "clearBeforeExecution": true
   },
   "codeEditor": {

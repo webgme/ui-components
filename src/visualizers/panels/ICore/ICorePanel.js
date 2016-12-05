@@ -9,12 +9,14 @@ define([
     'js/PanelManager/IActivePanel',
     'widgets/ICore/ICoreWidget',
     './ICoreControl',
+    'js/Utils/ComponentSettings',
     'text!./ICoreDefaultConfig.json'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
     ICoreWidget,
     ICoreControl,
+    ComponentSettings,
     ICoreDefaultConfig) {
 
     'use strict';
@@ -31,6 +33,8 @@ define([
         PanelBaseWithHeader.apply(this, [options, layoutManager]);
 
         this._client = params.client;
+        this._config = ICorePanel.getDefaultConfig();
+        ComponentSettings.resolveWithWebGMEGlobal(this._config, ICorePanel.getComponentId());
 
         //initialize UI
         this._initialize();
@@ -56,7 +60,7 @@ define([
         //set Widget title
         this.setTitle('');
 
-        this.widget = new ICoreWidget(this.logger, this.$el);
+        this.widget = new ICoreWidget(this.logger, this.$el, this._config);
 
         this.widget.setTitle = function (title) {
             self.setTitle(title);
@@ -65,7 +69,8 @@ define([
         this.control = new ICoreControl({
             logger: this.logger,
             client: this._client,
-            widget: this.widget
+            widget: this.widget,
+            config: this._config
         });
 
         this.onActivate();
