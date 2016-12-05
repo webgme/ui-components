@@ -7,8 +7,9 @@
 define([
     'js/Constants',
     './ICorePluginEvaluator',
-    'js/Toolbar/ToolbarDropDownButton'
-], function (CONSTANTS, ICorePluginEvaluator, ToolbarDropDownButton) {
+    'js/Toolbar/ToolbarDropDownButton',
+    'js/Utils/ComponentSettings'
+], function (CONSTANTS, ICorePluginEvaluator, ToolbarDropDownButton, ComponentSettings) {
 
     'use strict';
 
@@ -17,7 +18,7 @@ define([
     /**
      * @param {object} options
      * @class
-     * @augments {PluginEvaluator}
+     * @augments {ICorePluginEvaluator}
      * @constructor
      */
     function ICoreControl(options) {
@@ -262,13 +263,48 @@ define([
 
         this._toolbarItems.push(this.$btnSave);
 
+        // Auto-save
+        this.$autoSaveBtn = toolBar.addToggleButton({
+            title: 'Turn ' + (self._config.codeEditor.autoSave ? 'off' : 'on') + ' auto-save',
+            icon: 'glyphicon glyphicon-floppy-saved',
+            clickFn: function (data, toggled) {
+                self.$autoSaveBtn._btn.attr('title', 'Turn ' + (toggled ? 'off' : 'on') + ' auto-save');
+
+                ComponentSettings.updateComponentSettings('ICorePanel', {codeEditor: {autoSave: toggled}},
+                    function (err, newSettings) {
+                        if (err) {
+                            self._logger.error(err);
+                        } else {
+                            console.log(newSettings);
+                        }
+                    });
+
+                self._widget.setAutoSave(toggled);
+            }
+        });
+
+        this._toolbarItems.push(this.$autoSaveBtn);
+
         this._toolbarItems.push(toolBar.addSeparator());
 
         // Orientation
-        this.$btnOrientation = toolBar.addButton({
-            title: 'Toggle Orientation',
+        this.$btnOrientation = toolBar.addToggleButton({
+            title: 'Switch to ' + (self._config.codeEditor.verticalOrientation ? 'horizontal' : 'vertical') +
+            ' orientation',
             icon: 'fa fa-columns',
-            clickFn: function (/*data*/) {
+            clickFn: function (data, toggled) {
+                self.$btnOrientation._btn.attr('title', 'Switch to ' + (toggled ? 'horizontal' : 'vertical') +
+                    ' orientation');
+
+                ComponentSettings.updateComponentSettings('ICorePanel', {consoleWindow: {verticalOrientation: toggled}},
+                    function (err, newSettings) {
+                        if (err) {
+                            self._logger.error(err);
+                        } else {
+                            console.log(newSettings);
+                        }
+                    });
+
                 self._widget.switchOrientation();
             }
         });
@@ -287,6 +323,15 @@ define([
                         title: 'Click to select level',
                         text: level,
                         clickFn: function () {
+                            ComponentSettings.updateComponentSettings('ICorePanel', {consoleWindow: {logLevel: level}},
+                                function (err, newSettings) {
+                                    if (err) {
+                                        self._logger.error(err);
+                                    } else {
+                                        console.log(newSettings);
+                                    }
+                                });
+
                             self._widget.setLogLevel(level);
                         }
                     });

@@ -21,7 +21,7 @@
   },
   "consoleWindow": {
     "verticalOrientation": true,
-    "space": "50%",
+    "space": 50,
     "logLevel": "debug",
     "clearBeforeExecution": true
   },

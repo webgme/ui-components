@@ -29,6 +29,7 @@ define([
 
         this._el = container;
         this._logLevel = LOG_LEVELS[config.consoleWindow.logLevel] || 0;
+        this._autoSave = config.codeEditor.autoSave;
         this._templates = config.templates;
         this._defaultTemplateId = null;
 
@@ -195,6 +196,10 @@ define([
 
         this._consoleWindow.refresh();
         this._codeEditor.refresh();
+    };
+
+    ICoreWidget.prototype.setAutoSave = function (enable) {
+
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
