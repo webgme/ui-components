@@ -2,7 +2,8 @@
  * This file is for any scss that you may want for this visualizer.
  */
 .i-core-widget {
-  outline: none; }
+  outline: none;
+  padding: 2px; }
   .i-core-widget.vertical-orientation {
     display: inline-flex; }
     .i-core-widget.vertical-orientation .code-editor {
@@ -19,6 +20,17 @@
     .i-core-widget.horizontal-orientation .console-window {
       height: 50%;
       width: 100%; }
+  .i-core-widget .code-editor.CodeMirror-focused {
+    border-color: #cccccc;
+    box-shadow: none; }
+  .i-core-widget .console-window.CodeMirror-focused {
+    border-color: #cccccc;
+    box-shadow: none; }
+  .i-core-widget.no-console-window .code-editor {
+    height: 100%;
+    width: 100%; }
+  .i-core-widget.no-console-window .console-window {
+    display: none; }
   .i-core-widget .console-window span.cm-debug {
     color: #0b93d5; }
   .i-core-widget .console-window span.cm-info {

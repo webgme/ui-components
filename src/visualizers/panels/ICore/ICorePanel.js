@@ -5,7 +5,7 @@
  */
 
 define([
-    'js/PanelBase/PanelBaseWithHeader',
+    'js/PanelBase/PanelBase',
     'js/PanelManager/IActivePanel',
     'widgets/ICore/ICoreWidget',
     './ICoreControl',
@@ -57,20 +57,14 @@ define([
     ICorePanel.prototype._initialize = function () {
         var self = this;
 
-        //set Widget title
-        this.setTitle('');
-
-        this.widget = new ICoreWidget(this.logger, this.$el, this._config);
-
-        this.widget.setTitle = function (title) {
-            self.setTitle(title);
-        };
+        this.widget = new ICoreWidget(this.logger, this.$el, this._config, ICorePanel.getComponentId());
 
         this.control = new ICoreControl({
             logger: this.logger,
             client: this._client,
             widget: this.widget,
-            config: this._config
+            config: this._config,
+            configId: ICorePanel.getComponentId()
         });
 
         this.onActivate();
@@ -94,21 +88,18 @@ define([
         this.widget.destroy();
 
         PanelBaseWithHeader.prototype.destroy.call(this);
-        WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };
 
     ICorePanel.prototype.onActivate = function () {
         this.widget.onActivate();
         this.control.onActivate();
-        WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
     ICorePanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
         this.control.onDeactivate();
-        WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };
 

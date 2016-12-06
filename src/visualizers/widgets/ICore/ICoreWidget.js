@@ -1,4 +1,4 @@
-/*globals define, WebGMEGlobal, $*/
+/*globals define, WebGMEGlobal, $, _*/
 /*jshint browser: true*/
 
 /**
@@ -6,11 +6,12 @@
  */
 
 define([
+    './ICoreKeyboard',
     'codemirror/lib/codemirror',
     'jquery',
     './ICoreConsoleCodeMirrorMode',
     'css!./styles/ICoreWidget.css'
-], function (codeMirror) {
+], function (ICoreKeyboard, codeMirror) {
     'use strict';
 
     var ICoreWidget,
@@ -30,6 +31,7 @@ define([
         this._el = container;
         this._logLevel = LOG_LEVELS[config.consoleWindow.logLevel] || 0;
         this._autoSave = config.codeEditor.autoSave;
+        this._autoSaveTimerId = null;
         this._templates = config.templates;
         this._defaultTemplateId = null;
 
@@ -49,6 +51,8 @@ define([
         this._logger.debug('ctor finished');
     };
 
+    //_.extend(ICoreWidget.prototype, ICoreKeyboard.prototype);
+
     ICoreWidget.prototype._initialize = function (config) {
         var width = this._el.width(),
             height = this._el.height(),
@@ -67,21 +71,49 @@ define([
                 readOnly: true,
                 lineWrapping: true,
                 theme: 'monokai'
+            },
+            extraKeys = {
+                'Ctrl-S': function (cm) {
+                    self.saveCode();
+                },
+                'Esc': function (cm) {
+                    self.toggleConsole();
+                },
+                'Ctrl-Q': function (cm) {
+                    self.executeCode();
+                }
             };
 
-        // set widget class
         this._el.addClass(WIDGET_CLASS);
 
-        this._verticalOrientation = !config.consoleWindow.verticalOrientation;
-        this.switchOrientation();
-
+        // The code editor.
         this._codeEditor = codeMirror(this._el[0], codeEditorOptions);
         $(this._codeEditor.getWrapperElement()).addClass('code-editor');
-        // There is probably something more fancy to use here..
+
+        this._codeEditor.on('change', function(cm, event) {
+            if (event.origin !== 'setValue') {
+                if (self._autoSave) {
+                    clearTimeout(self._autoSaveTimerId);
+                    self._autoSaveTimerId = setTimeout(function () {
+                        self._autoSaveTimerId = null;
+                        self.saveCode();
+                    }, config.codeEditor.autoSaveInterval);
+                }
+            }
+        });
+
+        this._codeEditor.setOption('extraKeys', extraKeys);
+
+        // The console window.
         this._consoleWindow = codeMirror(this._el[0], consoleWindowOptions);
         $(this._consoleWindow.getWrapperElement()).addClass('console-window');
+        this._consoleWindow.setOption('extraKeys', extraKeys);
+
         this._consoleStr = 'Use the logger to print here (e.g. this.logger.info)';
         this._logs = [];
+
+
+        this.setOrientation(config.consoleWindow.verticalOrientation);
     };
 
     // Adding/Removing/Updating items
@@ -101,10 +133,12 @@ define([
 
     ICoreWidget.prototype.removeNode = function (gmeId) {
         this._codeEditor.setValue('// Node was removed');
+        clearTimeout(this._autoSaveTimerId);
     };
 
     ICoreWidget.prototype.updateNode = function (desc) {
         if (typeof desc.scriptCode === 'string' && desc.scriptCode !== this._codeEditor.getValue()) {
+            clearTimeout(this._autoSaveTimerId);
             this._codeEditor.setValue(desc.scriptCode);
         }
     };
@@ -168,16 +202,23 @@ define([
         this._consoleWindow.setValue(this._consoleStr);
         scrollInfo = this._consoleWindow.getScrollInfo();
         this._consoleWindow.scrollTo(scrollInfo.left, scrollInfo.height);
+        this._codeEditor.focus();
     };
 
     ICoreWidget.prototype.clearConsole = function () {
         this._consoleStr = '';
         this._consoleWindow.setValue(this._consoleStr);
         this._logs = [];
+        this._codeEditor.focus();
     };
 
-    ICoreWidget.prototype.switchOrientation = function () {
-        this._verticalOrientation = !this._verticalOrientation;
+    ICoreWidget.prototype.toggleConsole = function () {
+        this._el.toggleClass('no-console-window');
+        this._codeEditor.focus();
+    };
+
+    ICoreWidget.prototype.setOrientation = function (vertical) {
+        this._verticalOrientation = vertical;
 
         if (this._verticalOrientation) {
             this._el.addClass('vertical-orientation');
@@ -186,33 +227,46 @@ define([
             this._el.addClass('horizontal-orientation');
             this._el.removeClass('vertical-orientation');
         }
+
+        this._codeEditor.focus();
+        this._codeEditor.refresh();
+        this._consoleWindow.refresh();
     };
 
     ICoreWidget.prototype.loadTemplate = function (id) {
         var template = this._templates[id];
+        clearTimeout(this._autoSaveTimerId);
 
         this._codeEditor.setValue(template.script);
         this._consoleWindow.setValue(template.description);
 
         this._consoleWindow.refresh();
         this._codeEditor.refresh();
+
+        this._codeEditor.focus();
     };
 
     ICoreWidget.prototype.setAutoSave = function (enable) {
+        clearTimeout(this._autoSaveTimerId);
+        this._autoSave = enable;
 
+        this._codeEditor.focus();
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     ICoreWidget.prototype.onWidgetContainerResize = function (width, height) {
+        this._el.width(width);
+        this._el.height(height);
         this._logger.debug('Widget is resizing...');
     };
 
     ICoreWidget.prototype.destroy = function () {
-
+        clearTimeout(this._autoSaveTimerId);
     };
 
     ICoreWidget.prototype.onActivate = function () {
         this._logger.debug('ICoreWidget has been activated');
+        this._codeEditor.focus();
     };
 
     ICoreWidget.prototype.onDeactivate = function () {
