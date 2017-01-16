@@ -1,13 +1,28 @@
-## TODO: Rename this repo to components
-
-# Components
-A collection of domain independent webgme components
+# UI-Components
+A collection of domain independent webgme components. To use these make sure that you have installed [webgme-cli](https://github.com/webgme/webgme-cli) and that your repository was initialized with `webgme init`.
 
 ### Visualizers
-* ICore - Code-editor for interacting with models with the same APIs available from a plugin.
+#### ICore
+Code-editor for interacting with models uses the same APIs available from a plugin (context is the main function of a plugin).
+
+- Import using the webgme-cli tool `webgme import viz ICore webgme/ui-components`
+- Register visualizer at nodes where it should be available.
+- If `scriptCode` attribute is defined the code can be saved back to model.
+- See [ICoreDefaultConfig](src/visualizers/panels/ICore/ICoreDefaultConfig.json) for options.
+
+![ICore](images/icore.png "ICore in action - note the controls in the toolbar")
 
 ### Decorators
-* DisplayMetaDecorator - Based on ModelDecorator but also displays the meta-type of the object and ports.
+#### DisplayMetaDecorator
+Inherits the functionality of ModelDecorator but also displays the meta-type of the object and ports.
+
+- Import using the webgme-cli tool `webgme import decorator DisplayMetaDecorator webgme/ui-components`
+- At root-node add to `validDecorators` under meta in property editor.
+- At nodes where it should be used select it in `decorator` under preferences in property editor.
+
+Below is the DisplayMetaDecorator compared with the ModelDecorator.
+![DisplayMeta](images/displaymeta.png "ModelDecorator (lhs) compared with DisplayMetaDecorator (rhs)")
 
 ### Plugins
-* ImportModels - Example plugin for using the ModelImport API but with custom matching of bases.
+#### ImportModels
+Example plugin for using the ModelImport API but with custom matching of bases. This plugin can be imported using webgme-cli, however it is meant to be used as a template for writing a similar plugin with own matching rules.
