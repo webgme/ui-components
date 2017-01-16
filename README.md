@@ -4,6 +4,7 @@ A collection of domain independent webgme components. To use these make sure tha
 ### Visualizers
 #### ICore
 Code-editor for interacting with models uses the same APIs available from a plugin (context is the main function of a plugin).
+Note that this visualizer uses `eval` to evaluate the code and is recommended to only be used at dev-deployments.
 
 - Import using the webgme-cli tool `webgme import viz ICore webgme/ui-components`
 - Register visualizer at nodes where it should be available.
@@ -20,9 +21,9 @@ Inherits the functionality of ModelDecorator but also displays the meta-type of 
 - At root-node add to `validDecorators` under meta in property editor.
 - At nodes where it should be used select it in `decorator` under preferences in property editor.
 
-Below is the DisplayMetaDecorator compared with the ModelDecorator.
-![DisplayMeta](images/displaymeta.png "ModelDecorator (lhs) compared with DisplayMetaDecorator (rhs)")
+![DisplayMeta](images/displaymeta.png "ModelDecorator (lhs) compared with DisplayMetaDecorator (rhs) (hovering a port)")
 
 ### Plugins
 #### ImportModels
-Example plugin for using the ModelImport API but with custom matching of bases. This plugin can be imported using webgme-cli, however it is meant to be used as a template for writing a similar plugin with own matching rules.
+Example plugin for using the ModelImport API but with custom matching of bases. The [Import Models Plugin](src/plugins/ImportModels/ImportModels.js) can be imported using webgme-cli, however it is meant to be used as a template for writing a similar plugin with own matching rules.
+
