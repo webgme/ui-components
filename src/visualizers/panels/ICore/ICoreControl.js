@@ -204,9 +204,7 @@ define([
         this._displayToolbarItems();
 
         if (typeof this._currentNodeId === 'string') {
-            WebGMEGlobal.State.registerSuppressVisualizerFromNode(true);
-            WebGMEGlobal.State.registerActiveObject(this._currentNodeId);
-            WebGMEGlobal.State.registerSuppressVisualizerFromNode(false);
+            WebGMEGlobal.State.registerActiveObject(this._currentNodeId, {suppressVisualizerFromNode: true});
         }
     };
 
