@@ -3,6 +3,9 @@
     "decorators": {
       "DisplayMetaDecorator": {
         "src": "src/decorators/DisplayMetaDecorator"
+      },
+      "ChildDecorator": {
+        "src": "src/decorators/ChildDecorator"
       }
     },
     "plugins": {
