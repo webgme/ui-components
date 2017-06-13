@@ -46,13 +46,12 @@ define([
         this.childrenIds = {};
 
         nodeObj.getChildrenIds().forEach(function (childId) {
-            var childNode = client.getNode(childId);
-            if (childNode) {
-                self.childrenIds[childId] = childNode.getAttribute('name');
-            }
+            self.childrenIds[childId] = true;
 
             self._control.registerComponentIDForPartID(childId, gmeId);
         });
+
+        console.log('Current children', JSON.stringify(self.childrenIds, null, 2));
 
         this._renderName();
 
@@ -91,9 +90,14 @@ define([
     };
 
     ChildDecorator.prototype.update = function () {
-        var client = this._control._client,
-            nodeObj = client.getNode(this._metaInfo[CONSTANTS.GME_ID]),
+        var self = this,
+            client = this._control._client,
+            gmeId = this._metaInfo[CONSTANTS.GME_ID],
+            nodeObj = client.getNode(gmeId),
+            newChildren = {},
             newName = '';
+
+        console.log('update');
 
         if (nodeObj) {
             newName = nodeObj.getAttribute(nodePropertyNames.Attributes.name) || '';
@@ -102,6 +106,23 @@ define([
                 this.name = newName;
                 this.skinParts.$name.text(this.name);
             }
+
+            nodeObj.getChildrenIds().forEach(function (childId) {
+                newChildren[childId] = true;
+                if (!self.childrenIds[childId]) {
+                    self.childrenIds[childId] = true;
+                    self._control.registerComponentIDForPartID(childId, gmeId);
+                }
+            });
+
+            Object.keys(this.childrenIds).forEach(function (oldId) {
+                if (newChildren.hasOwnProperty(oldId) === false) {
+                    self._control.unregisterComponentIDFromPartID(oldId, gmeId);
+                    delete self.childrenIds[oldId];
+                }
+            });
+
+            console.log('Current children', JSON.stringify(self.childrenIds, null, 2));
         }
     };
 
@@ -195,8 +216,13 @@ define([
     };
 
     ChildDecorator.prototype.notifyComponentEvent = function (events) {
-        console.log(events);
+        console.log(JSON.stringify(events, null, 2));
     };
+
+    //
+    // ChildDecorator.prototype.destroy = function () {
+    //     // Unregister all sub components.
+    // };
 
     return ChildDecorator;
 });
