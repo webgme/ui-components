@@ -18,12 +18,27 @@
         "panel": "src/visualizers/panels/ICore",
         "secondary": false,
         "widget": "src/visualizers/widgets/ICore"
+      },
+      "ModelManager": {
+        "src": "panels/ModelManager/ModelManagerPanel",
+        "title": "ModelManager",
+        "panel": "src/visualizers/panels/ModelManager",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ModelManager"
       }
-    }
+    },
+    "addons": {},
+    "layouts": {},
+    "routers": {},
+    "seeds": {}
   },
   "dependencies": {
     "decorators": {},
     "plugins": {},
-    "visualizers": {}
+    "visualizers": {},
+    "addons": {},
+    "layouts": {},
+    "routers": {},
+    "seeds": {}
   }
 }
