@@ -82,7 +82,7 @@ define(['text!./ModelManagerView.html', 'css!./styles/ModelManagerWidget.css'], 
             this._toolbar.append(IMPORT_BUTTON);
             this._importBtn = $(this._toolbar).find('#importBtn');
             this._importBtn.click(function () {
-                console.log('let us open up an import model dialog');
+                self.onImport();
             });
 
             this._list = $(this._el).find('#modelList');

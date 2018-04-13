@@ -6,11 +6,15 @@
 define([
     'js/Constants',
     'js/Utils/GMEConcepts',
-    'js/NodePropertyNames'
+    'js/Utils/Exporters',
+    'js/NodePropertyNames',
+    'js/Dialogs/ImportModel/ImportModelDialog'
 ], function (
     CONSTANTS,
     GMEConcepts,
-    nodePropertyNames
+    exporters,
+    nodePropertyNames,
+    ImportModelDialog
 ) {
 
     'use strict';
@@ -35,6 +39,30 @@ define([
     };
 
     ModelManagerControl.prototype._initWidgetEventHandlers = function () {
+        var self = this;
+        this._widget.onNewModel = function (typeName, modelName) {
+            self._client.createNode({
+                    baseId: self._types[typeName],
+                    parentId: self._container
+                }, {attributes: {name: modelName}},
+                'Model \'' + modelName + '\' created by ModelManager');
+        };
+
+        this._widget.onImport = function () {
+            new ImportModelDialog(self._client, self._logger.fork('ImportModel')).show(self._container);
+        };
+
+        this._widget.onExport = function (modelPath) {
+            exporters.exportModels(this._client, this._logger, [modelPath], true);
+        };
+
+        this._widget.onView = function (modelPath) {
+            WebGMEGlobal.State.registerActiveObject(modelPath);
+        };
+
+        this._widget.onDelete = function (modelPath) {
+            self._client.deleteNode(modelPath, 'Model \'' + this._models[modelPath] + '\' removed by ModelManager');
+        };
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
