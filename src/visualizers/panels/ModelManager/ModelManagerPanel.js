@@ -8,7 +8,7 @@ define([
     'js/PanelManager/IActivePanel',
     'widgets/ModelManager/ModelManagerWidget',
     './ModelManagerControl',
-    'js/Utils/ComponentSettings',
+    'js/Utils/ComponentSettings'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
@@ -31,11 +31,10 @@ define([
 
         this._client = params.client;
         this._config = {};
-        ComponentSettings.resolveWithWebGMEGlobal(this._config, ModelManagerPanel.getComponentId());
 
-        //initialize UI
+        ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
+
         this._initialize();
-
         this.logger.debug('ctor finished');
     };
 
@@ -43,16 +42,17 @@ define([
     _.extend(ModelManagerPanel.prototype, PanelBaseWithHeader.prototype);
     _.extend(ModelManagerPanel.prototype, IActivePanel.prototype);
 
-    ModelManagerPanel.getComponentId = function () {
+    ModelManagerPanel.prototype.getComponentId = function () {
         return 'ModelManagerPanel';
     };
+
     ModelManagerPanel.prototype._initialize = function () {
         var self = this;
 
         //set Widget title
         this.setTitle('');
 
-        this.widget = new ModelManagerWidget(this.logger, this.$el, {inFault: false, types:['FCO','otherType']});
+        this.widget = new ModelManagerWidget(this.logger, this.$el, {client: this._client, config: this._config});
 
         this.widget.setTitle = function (title) {
             self.setTitle(title);
@@ -93,15 +93,11 @@ define([
     ModelManagerPanel.prototype.onActivate = function () {
         this.widget.onActivate();
         this.control.onActivate();
-        WebGMEGlobal.KeyboardManager.setListener(this.widget);
-        WebGMEGlobal.Toolbar.refresh();
     };
 
     ModelManagerPanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
         this.control.onDeactivate();
-        WebGMEGlobal.KeyboardManager.setListener(undefined);
-        WebGMEGlobal.Toolbar.refresh();
     };
 
     return ModelManagerPanel;
