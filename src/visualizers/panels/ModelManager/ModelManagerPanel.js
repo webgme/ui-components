@@ -43,7 +43,7 @@ define([
     _.extend(ModelManagerPanel.prototype, IActivePanel.prototype);
 
     ModelManagerPanel.prototype.getComponentId = function () {
-        return 'ModelManagerPanel';
+        return 'ModelManager';
     };
 
     ModelManagerPanel.prototype._initialize = function () {
@@ -61,7 +61,8 @@ define([
         this.control = new ModelManagerControl({
             logger: this.logger,
             client: this._client,
-            widget: this.widget
+            widget: this.widget,
+            config: this._config
         });
 
         this.onActivate();

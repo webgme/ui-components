@@ -13,6 +13,23 @@ Note that this visualizer uses `eval` to evaluate the code and is recommended to
 
 ![ICore](images/icore.png "ICore in action - note the controls in the toolbar")
 
+#### ModelManager
+Configurable, domain-specific, easy-to-use model management visualizer. It allows the creation, deletion
+and import/export of models. Note, that the component configuration has to be set properly to work!
+```
+{...
+    "ModelManager":
+    {
+        "container": "pathOfTheContainer", 
+        /* the listed models will be the children of this 
+        node and new ones will be created here */
+        "types": ['componentName','otherComponentName']
+        /* these needs to be valid meta node names that will be
+        the base of the new Models */
+    }
+...}
+``` 
+![ModelManager](images/modelmanager.png "ModelManager - quick access to your models in your project!")
 ### Decorators
 #### DisplayMetaDecorator
 Inherits the functionality of ModelDecorator but also displays the meta-type of the object and ports.

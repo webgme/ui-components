@@ -8,13 +8,15 @@ define([
     'js/Utils/GMEConcepts',
     'js/Utils/Exporters',
     'js/NodePropertyNames',
-    'js/Dialogs/ImportModel/ImportModelDialog'
+    'js/Dialogs/ImportModel/ImportModelDialog',
+    'js/Dialogs/Confirm/ConfirmDialog'
 ], function (
     CONSTANTS,
     GMEConcepts,
     exporters,
     nodePropertyNames,
-    ImportModelDialog
+    ImportModelDialog,
+    ConfirmDialog
 ) {
 
     'use strict';
@@ -22,6 +24,7 @@ define([
     var ModelManagerControl;
 
     ModelManagerControl = function (options) {
+        var self = this;
 
         this._logger = options.logger.fork('Control');
 
@@ -30,8 +33,16 @@ define([
         // Initialize core collections and variables
         this._widget = options.widget;
 
-        this._currentNodeId = null;
-        this._currentNodeParentId = undefined;
+        this._config = options.config;
+
+        this._container = this._config.container || '';
+
+        this._selfPatterns = {};
+        this._selfPatterns[this._container] = {children: 1};
+        this._territoryId = this._client.addUI(self, function (events) {
+            self._eventCallback(events);
+        });
+        this._client.updateTerritory(this._territoryId, this._selfPatterns);
 
         this._initWidgetEventHandlers();
 
@@ -40,12 +51,27 @@ define([
 
     ModelManagerControl.prototype._initWidgetEventHandlers = function () {
         var self = this;
-        this._widget.onNewModel = function (typeName, modelName) {
-            self._client.createNode({
-                    baseId: self._types[typeName],
-                    parentId: self._container
-                }, {attributes: {name: modelName}},
-                'Model \'' + modelName + '\' created by ModelManager');
+        this._widget.onNewModel = function (typeName, typePath) {
+            var dialog = new ConfirmDialog();
+            dialog.show({
+                title: 'New <' + typeName + '>',
+                question: 'Give a name for the new model..',
+                input: {
+                    label: 'Name',
+                    placeHolder: 'New ' + typeName,
+                    required: true
+                },
+                severity: 'info'
+            }, function (dummy, name) {
+                name = name || 'New ' + typeName;
+                self._client.createNode({
+                        baseId: typePath,
+                        parentId: self._container
+                    }, {attributes: {name: name}},
+                    'Model \'' + name + '\' created by ModelManager');
+            });
+
+
         };
 
         this._widget.onImport = function () {
@@ -53,7 +79,7 @@ define([
         };
 
         this._widget.onExport = function (modelPath) {
-            exporters.exportModels(this._client, this._logger, [modelPath], true);
+            exporters.exportModels(self._client, self._logger, [modelPath], true);
         };
 
         this._widget.onView = function (modelPath) {
@@ -61,152 +87,62 @@ define([
         };
 
         this._widget.onDelete = function (modelPath) {
-            self._client.deleteNode(modelPath, 'Model \'' + this._models[modelPath] + '\' removed by ModelManager');
+            self._client.deleteNode(modelPath, 'Model \'' + self._models[modelPath] + '\' removed by ModelManager');
         };
     };
 
-    /* * * * * * * * Visualizer content update callbacks * * * * * * * */
-    // One major concept here is with managing the territory. The territory
-    // defines the parts of the project that the visualizer is interested in
-    // (this allows the browser to then only load those relevant parts).
-    ModelManagerControl.prototype.selectedObjectChanged = function (nodeId) {
-        var desc = this._getObjectDescriptor(nodeId),
-            self = this;
+    ModelManagerControl.prototype._eventCallback = function (/*events*/) {
+        var self = this,
+            container = this._client.getNode(this._container),
+            childrenPaths,
+            models = [];
 
-        self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
+        this._models = [];
+        if (container === null) {
 
-        // Remove current territory patterns
-        if (self._currentNodeId) {
-            self._client.removeUI(self._territoryId);
+            this._widget.updateModelList([]);
+            return;
         }
 
-        self._currentNodeId = nodeId;
-        self._currentNodeParentId = undefined;
+        childrenPaths = container.getChildrenIds();
 
-        if (typeof self._currentNodeId === 'string') {
-            // Put new node's info into territory rules
-            self._selfPatterns = {};
-            self._selfPatterns[nodeId] = {children: 0};  // Territory "rule"
+        childrenPaths.forEach(function (childrenPath) {
+            var model = self._client.getNode(childrenPath),
+                meta;
 
-            self._widget.setTitle(desc.name.toUpperCase());
-
-            if (typeof desc.parentId === 'string') {
-                self.$btnModelHierarchyUp.show();
-            } else {
-                self.$btnModelHierarchyUp.hide();
+            if (model) {
+                meta = self._client.getNode(model.getMetaTypeId());
+                self._models[childrenPath] = {
+                    name: model.getAttribute('name'),
+                    type: meta === null ? null : meta.getAttribute('name'),
+                    path: childrenPath
+                }
+                models.push(self._models[childrenPath]);
             }
+        });
 
-            self._currentNodeParentId = desc.parentId;
+        self._widget.updateModelList(models);
 
-            self._territoryId = self._client.addUI(self, function (events) {
-                self._eventCallback(events);
-            });
-
-            // Update the territory
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
-
-            self._selfPatterns[nodeId] = {children: 1};
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
-        }
-    };
-
-    // This next function retrieves the relevant node information for the widget
-    ModelManagerControl.prototype._getObjectDescriptor = function (nodeId) {
-        var node = this._client.getNode(nodeId),
-            objDescriptor;
-        if (node) {
-            objDescriptor = {
-                id: node.getId(),
-                name: node.getAttribute(nodePropertyNames.Attributes.name),
-                childrenIds: node.getChildrenIds(),
-                parentId: node.getParentId(),
-                isConnection: GMEConcepts.isConnection(nodeId)
-            };
-        }
-
-        return objDescriptor;
-    };
-
-    /* * * * * * * * Node Event Handling * * * * * * * */
-    ModelManagerControl.prototype._eventCallback = function (events) {
-        var i = events ? events.length : 0,
-            event;
-
-        this._logger.debug('_eventCallback \'' + i + '\' items');
-
-        while (i--) {
-            event = events[i];
-            switch (event.etype) {
-
-                case CONSTANTS.TERRITORY_EVENT_LOAD:
-                    this._onLoad(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                    this._onUpdate(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                    this._onUnload(event.eid);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        this._logger.debug('_eventCallback \'' + events.length + '\' items - DONE');
-    };
-
-    ModelManagerControl.prototype._onLoad = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        // this._widget.addNode(description);
-    };
-
-    ModelManagerControl.prototype._onUpdate = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        // this._widget.updateNode(description);
-    };
-
-    ModelManagerControl.prototype._onUnload = function (gmeId) {
-        // this._widget.removeNode(gmeId);
-    };
-
-    ModelManagerControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
-        this._widget.updateModelList([
-            {
-                name: 'one',
-                type: 'two',
-                path: 'three'
-            },
-            {
-                name: '1',
-                type: '2',
-                path: '4'
-            }
-        ]);
-        if (this._currentNodeId === activeObjectId) {
-            // The same node selected as before - do not trigger
-        } else {
-            this.selectedObjectChanged(activeObjectId);
-        }
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     ModelManagerControl.prototype.destroy = function () {
-        this._detachClientEventListeners();
-        this._removeToolbarItems();
+        // this._detachClientEventListeners();
+        // this._removeToolbarItems();
     };
 
     ModelManagerControl.prototype._attachClientEventListeners = function () {
-        this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        // this._detachClientEventListeners();
+        // WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
     };
 
     ModelManagerControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        // WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
     };
 
     ModelManagerControl.prototype.onActivate = function () {
-        this._attachClientEventListeners();
-        this._displayToolbarItems();
+        // this._attachClientEventListeners();
+        // this._displayToolbarItems();
 
         if (typeof this._currentNodeId === 'string') {
             WebGMEGlobal.State.registerActiveObject(this._currentNodeId, {suppressVisualizerFromNode: true});
@@ -215,71 +151,71 @@ define([
 
     ModelManagerControl.prototype.onDeactivate = function () {
         this._detachClientEventListeners();
-        this._hideToolbarItems();
+        // this._hideToolbarItems();
     };
 
     /* * * * * * * * * * Updating the toolbar * * * * * * * * * */
-    ModelManagerControl.prototype._displayToolbarItems = function () {
+    // ModelManagerControl.prototype._displayToolbarItems = function () {
+    //
+    //     if (this._toolbarInitialized === true) {
+    //         for (var i = this._toolbarItems.length; i--;) {
+    //             this._toolbarItems[i].show();
+    //         }
+    //     } else {
+    //         this._initializeToolbar();
+    //     }
+    // };
 
-        if (this._toolbarInitialized === true) {
-            for (var i = this._toolbarItems.length; i--;) {
-                this._toolbarItems[i].show();
-            }
-        } else {
-            this._initializeToolbar();
-        }
-    };
+    // ModelManagerControl.prototype._hideToolbarItems = function () {
+    //
+    //     if (this._toolbarInitialized === true) {
+    //         for (var i = this._toolbarItems.length; i--;) {
+    //             this._toolbarItems[i].hide();
+    //         }
+    //     }
+    // };
 
-    ModelManagerControl.prototype._hideToolbarItems = function () {
+    // ModelManagerControl.prototype._removeToolbarItems = function () {
+    //
+    //     if (this._toolbarInitialized === true) {
+    //         for (var i = this._toolbarItems.length; i--;) {
+    //             this._toolbarItems[i].destroy();
+    //         }
+    //     }
+    // };
 
-        if (this._toolbarInitialized === true) {
-            for (var i = this._toolbarItems.length; i--;) {
-                this._toolbarItems[i].hide();
-            }
-        }
-    };
-
-    ModelManagerControl.prototype._removeToolbarItems = function () {
-
-        if (this._toolbarInitialized === true) {
-            for (var i = this._toolbarItems.length; i--;) {
-                this._toolbarItems[i].destroy();
-            }
-        }
-    };
-
-    ModelManagerControl.prototype._initializeToolbar = function () {
-        var self = this,
-            toolBar = WebGMEGlobal.Toolbar;
-
-        this._toolbarItems = [];
-
-        this._toolbarItems.push(toolBar.addSeparator());
-
-        /************** Go to hierarchical parent button ****************/
-        this.$btnModelHierarchyUp = toolBar.addButton({
-            title: 'Go to parent',
-            icon: 'glyphicon glyphicon-circle-arrow-up',
-            clickFn: function (/*data*/) {
-                WebGMEGlobal.State.registerActiveObject(self._currentNodeParentId);
-            }
-        });
-        this._toolbarItems.push(this.$btnModelHierarchyUp);
-        this.$btnModelHierarchyUp.hide();
-
-        /************** Checkbox example *******************/
-
-        this.$cbShowConnection = toolBar.addCheckBox({
-            title: 'toggle checkbox',
-            icon: 'gme icon-gme_diagonal-arrow',
-            checkChangedFn: function (data, checked) {
-                self._logger.debug('Checkbox has been clicked!');
-            }
-        });
-        this._toolbarItems.push(this.$cbShowConnection);
-
-        this._toolbarInitialized = true;
-    };
+    // ModelManagerControl.prototype._initializeToolbar = function () {
+    //     var self = this,
+    //         toolBar = WebGMEGlobal.Toolbar;
+    //
+    //     this._toolbarItems = [];
+    //
+    //     this._toolbarItems.push(toolBar.addSeparator());
+    //
+    //     /************** Go to hierarchical parent button ****************/
+    //     this.$btnModelHierarchyUp = toolBar.addButton({
+    //         title: 'Go to parent',
+    //         icon: 'glyphicon glyphicon-circle-arrow-up',
+    //         clickFn: function (/*data*/) {
+    //             WebGMEGlobal.State.registerActiveObject(self._currentNodeParentId);
+    //         }
+    //     });
+    //     this._toolbarItems.push(this.$btnModelHierarchyUp);
+    //     this.$btnModelHierarchyUp.hide();
+    //
+    //     /************** Checkbox example *******************/
+    //
+    //     this.$cbShowConnection = toolBar.addCheckBox({
+    //         title: 'toggle checkbox',
+    //         icon: 'gme icon-gme_diagonal-arrow',
+    //         checkChangedFn: function (data, checked) {
+    //             self._logger.debug('Checkbox has been clicked!');
+    //         }
+    //     });
+    //     this._toolbarItems.push(this.$cbShowConnection);
+    //
+    //     this._toolbarInitialized = true;
+    // };
 
     return ModelManagerControl;
 });
