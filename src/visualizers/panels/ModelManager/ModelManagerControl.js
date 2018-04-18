@@ -61,6 +61,7 @@ define([
             dialog.show({
                 title: 'New <' + typeName + '>',
                 question: 'Give a name for the new model..',
+                iconClass: 'glyphicon glyphicon-pencil',
                 input: {
                     label: 'Name',
                     placeHolder: 'New ' + typeName,
@@ -117,12 +118,14 @@ define([
 
             if (model) {
                 meta = self._client.getNode(model.getMetaTypeId());
-                self._models[childrenPath] = {
-                    name: model.getAttribute('name'),
-                    type: meta === null ? null : meta.getAttribute('name'),
-                    path: childrenPath
+                if (meta && model.getBaseId() && self._config.types.indexOf(meta.getAttribute('name')) !== -1) {
+                    self._models[childrenPath] = {
+                        name: model.getAttribute('name'),
+                        type: meta === null ? null : meta.getAttribute('name'),
+                        path: childrenPath
+                    }
+                    models.push(self._models[childrenPath]);
                 }
-                models.push(self._models[childrenPath]);
             }
         });
 
