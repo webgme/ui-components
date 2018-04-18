@@ -33,16 +33,10 @@ define([
         // Initialize core collections and variables
         this._widget = options.widget;
 
-        this._config = options.config;
 
-        this._container = this._config.container || '';
-
-        this._selfPatterns = {};
-        this._selfPatterns[this._container] = {children: 1};
         this._territoryId = this._client.addUI(self, function (events) {
             self._eventCallback(events);
         });
-        this._client.updateTerritory(this._territoryId, this._selfPatterns);
 
         this._initWidgetEventHandlers();
 
@@ -51,6 +45,17 @@ define([
 
     ModelManagerControl.prototype._initWidgetEventHandlers = function () {
         var self = this;
+
+        this._widget.onInitialized = function (config) {
+            self._config = config;
+
+            self._container = self._config.container || '';
+
+            self._selfPatterns = {};
+            self._selfPatterns[self._container] = {children: 1};
+            self._client.updateTerritory(self._territoryId, self._selfPatterns);
+        };
+
         this._widget.onNewModel = function (typeName, typePath) {
             var dialog = new ConfirmDialog();
             dialog.show({

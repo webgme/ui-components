@@ -61,8 +61,7 @@ define([
         this.control = new ModelManagerControl({
             logger: this.logger,
             client: this._client,
-            widget: this.widget,
-            config: this._config
+            widget: this.widget
         });
 
         this.onActivate();
@@ -99,6 +98,10 @@ define([
     ModelManagerPanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
         this.control.onDeactivate();
+    };
+
+    ModelManagerPanel.prototype.getValidTypesInfo = function (/*nodeId, aspect*/) {
+        return {};
     };
 
     return ModelManagerPanel;

@@ -9,32 +9,28 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
 
     var ModelManagerWidget,
         WIDGET_CLASS = 'model-manager',
-        BASE_WIDGET_FRAME = '<div class="col-sm-12">\n' +
-            '    <div id="toolbarBtns" class="col-sm-offset-2">\n' +
-            '    </div>\n' +
-            '    <div class="col-sm-12">\n' +
-            '      <table class="table"><thead><tr><th>Name</th><th>Type</th><th></th></tr></thead>\n' +
-            '        <tbody id="modelList"></tbody>\n' +
-            '      </table>\n' +
-            '    </div>\n' +
-            '</div>',
-        SINGLE_CREATE_BUTTON = '<button id="createBtn" type="button" class="btn btn-danger">Create a new</button>',
-        IMPORT_BUTTON = '<button id="importBtn" type="button" class="btn btn-primary">Import</button>',
-        DROPDOWN_CREATE_BUTTON = '<div class="btn-group">\n' +
-            '            <button type="button"\n' +
-            '                    class="btn btn-danger dropdown-toggle"\n' +
-            '                    data-toggle="dropdown"\n' +
-            '                    aria-haspopup="true"\n' +
-            '                    aria-expanded="false">Create a new <span class="caret"></span>\n' +
-            '            </button>\n' +
-            '            <ul class="dropdown-menu" id="createBtnList">\n' +
-            '                <!-- <li><a href="#">Action</a></li>\n' +
-            '                <li><a href="#">Another action</a></li>\n' +
-            '                <li><a href="#">Something else here</a></li>\n' +
-            '                <li role="separator" class="divider"></li>\n' +
-            '                <li><a href="#">Separated link</a></li> !-->\n' +
-            '            </ul>\n' +
-            '        </div>';
+        BASE_WIDGET_FRAME = `
+            <div class="col-sm-12">
+                <div id="toolbarBtns">
+                </div>
+                <div class="col-sm-12">
+                    <table class="table"><thead><tr><th>Name</th><th>Type</th><th> </th></tr></thead>
+                        <tbody id="modelList"></tbody>
+                    </table>
+                </div>
+            </div>`,
+        SINGLE_CREATE_BUTTON = '<button id="createBtn" type="button" class="btn btn-primary">Create a new</button>',
+        IMPORT_BUTTON = '<button id="importBtn" type="button" class="btn btn-default">Import</button>',
+        DROPDOWN_CREATE_BUTTON = `
+            <div class="btn-group">
+                <button type="button" 
+                    class="btn btn-primary dropdown-toggle"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false">Create a new <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" id="createBtnList"></ul>
+            </div>`;
 
     ModelManagerWidget = function (logger, container, options) {
         var self = this;
@@ -42,14 +38,19 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
 
         this._el = container;
         this._client = options.client;
-        this._config = options.config;
+        this._config = options.config || {};
         this._initialized = false;
 
         this._initialize();
 
-        this._checkComponentSettings(function () {
+        this._checkComponentSettings(function (useDefault) {
+            if (useDefault) {
+                self._config = self._defaultConfig;
+                self._types = self._defaultTypes;
+            }
             self._fillInitialContent();
             self._initialized = true;
+            self.onInitialized(self._config);
             if (self._models) {
                 self.updateModelList(self._models);
                 delete self._models;
@@ -60,8 +61,20 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
     };
 
     ModelManagerWidget.prototype._initialize = function () {
-        // set widget class
+        var self = this;
         this._el.addClass(WIDGET_CLASS);
+
+        //build the default config
+        this._defaultConfig = {container: '', types: []};
+        this._defaultTypes = {};
+        var metaNodes = this._client.getAllMetaNodes(true),
+            keys = Object.keys(metaNodes);
+
+        keys.forEach(function (metaPath) {
+            var name = metaNodes[metaPath].getAttribute('name');
+            self._defaultConfig.types.push(name);
+            self._defaultTypes[name] = metaPath;
+        });
     };
 
 
@@ -73,15 +86,17 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
 
         self._types = {};
         self._client.getCoreInstance(null, function (err, result) {
-            var missing = self._config.types.length,
+            var missing,
                 paths;
 
-            if (err) {
+            if (self._config.types instanceof Array !== true) {
+                callback(true);
+            } else if (err) {
                 self._logger.error('Unable to verify component settings:', err);
                 self._config.inFault = true;
-                callback();
-                return;
+                callback(true);
             } else {
+                missing = self._config.types.length;
                 core = result.core;
                 root = result.rootNode;
                 metaNodes = core.getAllMetaNodes(root);
@@ -96,18 +111,17 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
 
                 if (missing !== 0) {
                     self._logger.warn('Incompatible component setting:', self._config);
-                    self._config.inFault = true;
-                    callback();
+                    callback(true);
                 } else {
                     core.loadByPath(root, self._config.container, function (err/*,node*/) {
+                        var useDefault = false;
                         if (err) {
                             self._logger.error('Invalid component setting - no such container:', err);
-                            self._config.inFault = true;
+                            useDefault = true;
                         } else {
                             self._logger.info('ModelManagerPanel component setting is compatible with the project.');
-                            self._config.inFault = false;
                         }
-                        callback();
+                        callback(useDefault);
                     });
                 }
             }
@@ -117,40 +131,35 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
     ModelManagerWidget.prototype._fillInitialContent = function () {
         var self = this;
 
-        if (self._config.inFault) {
-            this._el.append('<h3>Cannot work without proper configuration!</h3>');
-            return;
-        } else {
-            self._el.append(BASE_WIDGET_FRAME);
-            self._toolbar = $(this._el).find('#toolbarBtns');
+        self._el.append(BASE_WIDGET_FRAME);
+        self._toolbar = $(this._el).find('#toolbarBtns');
 
-            if (self._config.types.length === 1) {
-                self._toolbar.append(SINGLE_CREATE_BUTTON);
-                self._createBtn = $(this._toolbar).find('#createBtn');
-                self._createBtn.click(function () {
-                    self.onNewModel(self._config.types[0], self._types[self._config.types[0]]);
-                });
-                self._createBtn.empty();
-                self._createBtn.append('Create a new ' + self._config.types[0]);
-            } else {
-                self._toolbar.append(DROPDOWN_CREATE_BUTTON);
-                self._createBtn = this._toolbar.find('#createBtnList');
-                self._config.types.forEach(function (type, index) {
-                    self._createBtn.append('<li id="createBtn' + index + '"><a href="#">' + type + '</a></li>');
-                    self._createBtn.find('#createBtn' + index).click(function () {
-                        self.onNewModel(self._config.types[index], self._types[self._config.types[index]]);
-                    });
-                })
-            }
-
-            self._toolbar.append(IMPORT_BUTTON);
-            self._importBtn = $(this._toolbar).find('#importBtn');
-            self._importBtn.click(function () {
-                self.onImport();
+        if (self._config.types.length === 1) {
+            self._toolbar.append(SINGLE_CREATE_BUTTON);
+            self._createBtn = $(this._toolbar).find('#createBtn');
+            self._createBtn.click(function () {
+                self.onNewModel(self._config.types[0], self._types[self._config.types[0]]);
             });
-
-            self._list = $(this._el).find('#modelList');
+            self._createBtn.empty();
+            self._createBtn.append('Create a new ' + self._config.types[0]);
+        } else {
+            self._toolbar.append(DROPDOWN_CREATE_BUTTON);
+            self._createBtn = this._toolbar.find('#createBtnList');
+            self._config.types.forEach(function (type, index) {
+                self._createBtn.append('<li id="createBtn' + index + '"><a href="#">' + type + '</a></li>');
+                self._createBtn.find('#createBtn' + index).click(function () {
+                    self.onNewModel(self._config.types[index], self._types[self._config.types[index]]);
+                });
+            })
         }
+
+        self._toolbar.append(IMPORT_BUTTON);
+        self._importBtn = $(this._toolbar).find('#importBtn');
+        self._importBtn.click(function () {
+            self.onImport();
+        });
+
+        self._list = $(this._el).find('#modelList');
     };
 
     ModelManagerWidget.prototype.updateModelList = function (models) {
@@ -176,15 +185,12 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
 
             $(self._list).append(elementStr);
             $(self._list).find('#' + index + '_viewBtn').click(function () {
-                console.log('yeah, I am going to view :', model.path);
                 self.onView(model.path);
             });
             $(self._list).find('#' + index + '_exportBtn').click(function () {
-                console.log('yeah, I am going to export :', model.path);
                 self.onExport(model.path);
             });
             $(self._list).find('#' + index + '_deleteBtn').click(function () {
-                console.log('yeah, I am going to remove :', model.path);
                 self.onDelete(model.path);
             });
         });
@@ -192,6 +198,9 @@ define(['css!./styles/ModelManagerWidget.css'], function () {
 
     /* * * * * * * * Visualizer event handlers * * * * * * * */
 
+    ModelManagerWidget.prototype.onInitialized = function (/*config*/) {
+        this._logger.warn('Event function \'onInitialized\' should be overriden.');
+    };
     ModelManagerWidget.prototype.onNewModel = function (/*typeName*/) {
         this._logger.warn('Event function \'onNewModel\' should be overriden.');
     };
