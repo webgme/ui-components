@@ -4,5 +4,11 @@
     "title": "ICore",
     "panel": "panels/ICore/ICorePanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "ModelManager",
+    "title": "ModelManager",
+    "panel": "panels/ModelManager/ModelManagerPanel",
+    "DEBUG_ONLY": false
   }
 ]
