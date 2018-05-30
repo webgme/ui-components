@@ -15,7 +15,12 @@ Note that this visualizer uses `eval` to evaluate the code and is recommended to
 
 #### ModelManager
 Configurable, domain-specific, easy-to-use model management visualizer. It allows the creation, deletion
-and import/export of models. Note, that the component configuration has to be set properly to work!
+and import/export of models.
+
+- Import using the webgme-cli tool `webgme import viz ModelManager webgme/ui-components`
+- Register visualizer at nodes where it should be available.
+- Modify and add the following to your [component-settings](https://github.com/webgme/webgme/wiki/Component-Settings).
+
 ```
 {...
     "ModelManager":
@@ -29,6 +34,7 @@ and import/export of models. Note, that the component configuration has to be se
     }
 ...}
 ``` 
+
 ![ModelManager](images/modelmanager.png "ModelManager - quick access to your models in your project!")
 ### Decorators
 #### DisplayMetaDecorator
