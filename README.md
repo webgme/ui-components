@@ -26,14 +26,12 @@ and import/export of models.
     "ModelManager":
     {
         "container": "pathOfTheContainer", 
-        /* the listed models will be the children of this 
-        node and new ones will be created here */
-        "types": ['componentName','otherComponentName']
-        /* these needs to be valid meta node names that will be
-        the base of the new Models */
+        "types": ["MetaTypeName1", "MetaTypeName2"]
     }
 ...}
 ``` 
+- `container` - The node from which the visualizer will act. The children of the container will be listed and any new models created from the visualizer will be created inside the container.
+- `types` - These need to be valid meta node names. Only children of the container matching these types will be displayed. Note that the meta-type must match exactly (no inheritance taken into account). 
 
 ![ModelManager](images/modelmanager.png "ModelManager - quick access to your models in your project!")
 ### Decorators
