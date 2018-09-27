@@ -25,6 +25,13 @@
         "panel": "src/visualizers/panels/ModelManager",
         "secondary": false,
         "widget": "src/visualizers/widgets/ModelManager"
+      },
+      "IFrameExample": {
+        "src": "panels/IFrameExample/IFrameExamplePanel",
+        "title": "IFrameExample",
+        "panel": "src/visualizers/panels/IFrameExample",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/IFrameExample"
       }
     },
     "addons": {},

@@ -10,5 +10,11 @@
     "title": "ModelManager",
     "panel": "panels/ModelManager/ModelManagerPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "IFrameExample",
+    "title": "IFrameExample",
+    "panel": "panels/IFrameExample/IFrameExamplePanel",
+    "DEBUG_ONLY": false
   }
 ]
