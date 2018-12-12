@@ -12,13 +12,6 @@
       }
     },
     "visualizers": {
-      "ICore": {
-        "src": "panels/ICore/ICorePanel",
-        "title": "ICore",
-        "panel": "src/visualizers/panels/ICore",
-        "secondary": false,
-        "widget": "src/visualizers/widgets/ICore"
-      },
       "ModelManager": {
         "src": "panels/ModelManager/ModelManagerPanel",
         "title": "ModelManager",
@@ -26,12 +19,12 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/ModelManager"
       },
-      "IFrameExample": {
-        "src": "panels/IFrameExample/IFrameExamplePanel",
-        "title": "IFrameExample",
-        "panel": "src/visualizers/panels/IFrameExample",
+      "IFrameViz": {
+        "src": "panels/IFrameViz/IFrameVizPanel",
+        "title": "IFrameViz",
+        "panel": "src/visualizers/panels/IFrameViz",
         "secondary": false,
-        "widget": "src/visualizers/widgets/IFrameExample"
+        "widget": "src/visualizers/widgets/IFrameViz"
       }
     },
     "addons": {},

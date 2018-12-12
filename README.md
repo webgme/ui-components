@@ -3,15 +3,7 @@ A collection of domain independent webgme components. To use these make sure tha
 
 ### Visualizers
 #### ICore
-Code-editor for interacting with models uses the same APIs available from a plugin (context is the main function of a plugin).
-Note that this visualizer uses `eval` to evaluate the code and is recommended to only be used at dev-deployments.
-
-- Import using the webgme-cli tool `webgme import viz ICore webgme/ui-components`
-- Register visualizer at nodes where it should be available.
-- If `scriptCode` attribute is defined the code can be saved back to model.
-- See [ICoreDefaultConfig](src/visualizers/panels/ICore/ICoreDefaultConfig.json) for options.
-
-![ICore](images/icore.png "ICore in action - note the controls in the toolbar")
+ICore now has its own repository at [webgme/icore](https://github.com/webgme/icore)!
 
 #### ModelManager
 Configurable, domain-specific, easy-to-use model management visualizer. It allows the creation, deletion
@@ -23,17 +15,35 @@ and import/export of models.
 
 ```
 {...
-    "ModelManager":
-    {
-        "container": "pathOfTheContainer", 
+    "ModelManager": {
+        "container": "pathOfTheContainer",
         "types": ["MetaTypeName1", "MetaTypeName2"]
     }
 ...}
-``` 
+```
 - `container` - The node from which the visualizer will act. The children of the container will be listed and any new models created from the visualizer will be created inside the container.
-- `types` - These need to be valid meta node names. Only children of the container matching these types will be displayed. Note that the meta-type must match exactly (no inheritance taken into account). 
+- `types` - These need to be valid meta node names. Only children of the container matching these types will be displayed. Note that the meta-type must match exactly (no inheritance taken into account).
 
 ![ModelManager](images/modelmanager.png "ModelManager - quick access to your models in your project!")
+
+#### IFrameViz
+This is simple example of how to embed another web-site as an iframe inside a webgme visualizer.
+
+The visualizer can be used as is, by default it looks for a url at the `url` attribute of the active-node.
+The attribute name can be configured in `components.json`:
+```
+{...
+    "IFrameViz": {
+        "urlAttribute": "url"
+    }
+...}
+```
+
+(If the attribute isn't defined or has an empty value an info box will be displayed.)
+
+Keep in mind that you might run into Cross Origin issues unless you setup
+a reverse proxy where webgme and the embedded app are reachable from the same host.
+
 ### Decorators
 #### DisplayMetaDecorator
 Inherits the functionality of ModelDecorator but also displays the meta-type of the object and ports.

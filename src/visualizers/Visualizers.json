@@ -1,20 +1,14 @@
 [
   {
-    "id": "ICore",
-    "title": "ICore",
-    "panel": "panels/ICore/ICorePanel",
-    "DEBUG_ONLY": false
-  },
-  {
     "id": "ModelManager",
     "title": "ModelManager",
     "panel": "panels/ModelManager/ModelManagerPanel",
     "DEBUG_ONLY": false
   },
   {
-    "id": "IFrameExample",
-    "title": "IFrameExample",
-    "panel": "panels/IFrameExample/IFrameExamplePanel",
+    "id": "IFrameViz",
+    "title": "IFrameViz",
+    "panel": "panels/IFrameViz/IFrameVizPanel",
     "DEBUG_ONLY": false
   }
 ]

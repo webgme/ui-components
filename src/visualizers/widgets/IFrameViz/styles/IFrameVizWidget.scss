@@ -1,0 +1,34 @@
+/**
+ * This file is for any scss that you may want for this visualizer.
+ * @author pmeijer / https://github.com/pmeijer
+ */
+
+.i-frame-viz {
+  outline: none;
+  &.panel-body {
+    padding: 0;
+  }
+
+  .info-box {
+    width: 30%;
+    border-radius: 5px;
+    min-width: 375px;
+    margin-top: 40px;
+    background-color: #fff;
+    padding: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    border-width: 1px;
+    border-color: lightgray;
+    border-style: solid;
+    .info-box-title {
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .info-box-desc {
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+  }
+}
