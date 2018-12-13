@@ -6,27 +6,60 @@
 
 define([
     'js/Constants',
+    'js/Utils/ComponentSettings',
     'js/Widgets/DiagramDesigner/DiagramDesignerWidget.DecoratorBase',
     'text!./MultilineAttributeDecorator.DiagramDesignerWidget.html',
     'css!./MultilineAttributeDecorator.DiagramDesignerWidget.css'
-], function (CONSTANTS, DiagramDesignerWidgetDecoratorBase, MultilineAttributeDecoratorTemplate) {
+], function (CONSTANTS, ComponentSettings, DiagramDesignerWidgetDecoratorBase, MultilineAttributeDecoratorTemplate) {
 
     'use strict';
 
-    var DECORATOR_ID = 'MultilineAttributeDecorator';
+    var DECORATOR_ID = 'MultilineAttributeDecorator',
+        HEIGHT_REG_KEY = 'decoratorHeight',
+        WIDTH_REG_KEY = 'decoratorWidth',
+        MIN_WIDTH = 120,
+        MIN_HEIGHT = 80;
 
     function MultilineAttributeDecorator(options) {
         var opts = _.extend({}, options);
 
         DiagramDesignerWidgetDecoratorBase.apply(this, [opts]);
 
+        this.config = this.getDefaultConfig();
+        ComponentSettings.resolveWithWebGMEGlobal(this.config, this.getComponentId());
+
         this.name = '';
+        this.size = {
+            width: MIN_WIDTH,
+            height: MIN_HEIGHT
+        };
+
+        this.fields = {
+            // <attrName>: {
+            //   el: <$el>,
+            //   value: <string>,
+            //   name: <string>,
+            //   type: <null||string>,
+            //   lineCnt: <number>
+            // }
+        };
 
         this.logger.debug('MultilineAttributeDecorator ctor');
     }
 
     _.extend(MultilineAttributeDecorator.prototype, DiagramDesignerWidgetDecoratorBase.prototype);
     MultilineAttributeDecorator.prototype.DECORATORID = DECORATOR_ID;
+
+    MultilineAttributeDecorator.prototype.getComponentId = function () {
+        return DECORATOR_ID;
+    };
+
+    MultilineAttributeDecorator.prototype.getDefaultConfig = function () {
+        return {
+            textAlign: 'left',
+            attrBlackList: [],
+        };
+    };
 
     /*********************** OVERRIDE DiagramDesignerWidgetDecoratorBase MEMBERS **************************/
 
@@ -35,20 +68,16 @@ define([
     MultilineAttributeDecorator.prototype.on_addTo = function () {
         var self = this;
 
+        // initializations
         this.nodeId = this._metaInfo[CONSTANTS.GME_ID];
         this.client = this._control._client;
         this.$name = this.$el.find('.name');
         this.$attributeContainer = this.$el.find('.attribute-container');
-        this.fields = {
-            // <attrName>: {
-            //   el: <$el>,
-            //   value: <string>,
-            //   name: <string>
-            //   type: <null||string>
-            // }
-        };
+        this.$reszieIcon = this.$el.find('.resize-icon');
+        this.mouseStartPos = null;
+        this.elStartSize = null;
 
-        // set title editable on double-click
+        // event handlers
         this.$name.on('dblclick.editOnDblClick', null, function (event) {
             if (self.hostDesignerItem.canvas.getIsReadOnlyMode() !== true) {
                 $(this).editInPlace({
@@ -63,59 +92,149 @@ define([
             event.preventDefault();
         });
 
+        function calculateNewSize(event) {
+            var dX = event.pageX - self.mouseStartPos.x,
+                dY = event.pageY - self.mouseStartPos.y,
+                width = self.elStartSize.width,
+                height = self.elStartSize.height,
+                newX,
+                newY;
+
+            dX = dX / self.hostDesignerItem.canvas._zoomRatio;
+            dY = dY / self.hostDesignerItem.canvas._zoomRatio;
+            newX = width + dX;
+            newY = height + dY;
+
+            newX = newX > MIN_WIDTH ? newX : MIN_WIDTH;
+            newY = newY > MIN_HEIGHT ? newY : MIN_HEIGHT;
+
+            return {
+                width: Math.round(newX),
+                height: Math.round(newY)
+            };
+        }
+
+        function mouseMoveHandler(event) {
+            var newSize = calculateNewSize(event);
+
+            self.$el.width(newSize.width);
+            self.$el.height(newSize.height);
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        function mouseUpHandler(event) {
+            var newSize = calculateNewSize(event);
+
+            self.mouseStartPos = null;
+            self.mouseCurrPos = null;
+            $(document).off('mousemove', mouseMoveHandler);
+            $(document).off('mouseup', mouseUpHandler);
+
+            self.client.startTransaction();
+            self.client.setRegistry(self.nodeId, WIDTH_REG_KEY, newSize.width);
+            self.client.setRegistry(self.nodeId, HEIGHT_REG_KEY, newSize.height);
+            self.client.completeTransaction();
+        }
+
+        this.$reszieIcon.on('mousedown', function (event) {
+            self.mouseStartPos = {
+                x: event.pageX,
+                y: event.pageY,
+            };
+
+            self.elStartSize = {
+                width: self.$el.width(),
+                height: self.$el.height()
+            };
+
+            console.log('mouse down on icon', JSON.stringify(self.mouseStartPos));
+
+            $(document).on('mousemove', mouseMoveHandler);
+            $(document).on('mouseup', mouseUpHandler);
+
+            event.stopPropagation();
+            event.preventDefault();
+        });
+
+        // Render the stuff.
+        this._renderSize();
         this._renderName();
         this._renderAttributeFields();
     };
 
     MultilineAttributeDecorator.prototype.update = function () {
+        this._renderSize();
         this._renderName();
         this._renderAttributeFields();
+    };
+
+    MultilineAttributeDecorator.prototype._renderSize = function () {
+        var nodeObj = this.client.getNode(this.nodeId),
+            width,
+            height;
+
+        if (nodeObj) {
+            width = nodeObj.getRegistry(WIDTH_REG_KEY);
+            height = nodeObj.getRegistry(HEIGHT_REG_KEY);
+        }
+
+        if (width && width !== this.size.width) {
+            this.size.width = width;
+            this.$el.width(width);
+        }
+
+        if (height && height !== this.size.height) {
+            this.size.height = height;
+            this.$el.height(height);
+        }
     };
 
     MultilineAttributeDecorator.prototype._renderAttributeFields = function () {
         var self = this,
             nodeObj = this.client.getNode(this.nodeId),
             newFields = {},
+            totalNbrOfLines = 0,
             insertionsMade = false;
 
-        debugger;
         if (!nodeObj) {
             return;
         }
 
-       nodeObj.getValidAttributeNames()
-           .forEach(function (attrName) {
-               var attrMeta = nodeObj.getAttributeMeta(attrName),
-                   value;
-               if (attrMeta.type === 'string' && attrMeta.multiline) {
-                   newFields[attrName] = true;
-                   value = nodeObj.getAttribute(attrName) || '';
+        nodeObj.getValidAttributeNames()
+            .forEach(function (attrName) {
+                var attrMeta = nodeObj.getAttributeMeta(attrName),
+                    value;
+                if (attrMeta.type === 'string' && attrMeta.multiline &&
+                    self.config.attrBlackList.indexOf(attrName) === -1) {
 
-                   if (self.fields[attrName]) {
-                       // update
-                       if (self.fields[attrName].value !== value) {
-                           self.fields[attrName].value = value;
-                           self._updateFieldValue(attrName, value);
-                       }
+                    newFields[attrName] = true;
+                    value = nodeObj.getAttribute(attrName) || '';
 
-                       if (self.fields[attrName].type !== attrMeta.multilineType) {
-                           self.fields[attrName].type = attrMeta.multilineType;
-                           self._updateFieldType(attrName, attrMeta.multilineType);
-                       }
-                   } else {
-                       // add
-                       insertionsMade = true;
-                       self.fields[attrName] = {
-                           el: self._getNewFieldElement({name: attrName, value: value}),
-                           name: attrName,
-                           type: attrMeta.multilineType,
-                           value: value
-                       };
+                    if (self.fields[attrName]) {
+                        // update
+                        if (self.fields[attrName].value !== value) {
+                            self._updateFieldValue(attrName, value);
+                        }
 
-                       self.$attributeContainer.append(self.fields[attrName].el);
-                   }
-               }
-           });
+                        if (self.fields[attrName].type !== attrMeta.multilineType) {
+                            self._updateFieldType(attrName, attrMeta.multilineType);
+                        }
+                    } else {
+                        // add
+                        insertionsMade = true;
+                        self.fields[attrName] = {
+                            el: self._getNewFieldElement({name: attrName, value: value}),
+                            name: attrName,
+                            type: attrMeta.multilineType,
+                            value: value,
+                            lineCnt: (value.match(/\r?\n/g) || '').length + 1 + 2, // +2 account for title
+                        };
+
+                        self.$attributeContainer.append(self.fields[attrName].el);
+                    }
+                }
+            });
 
         // remove
         Object.keys(self.fields)
@@ -123,21 +242,32 @@ define([
                 if (!newFields[attrName]) {
                     self._removeFieldElement(attrName);
                     delete self.fields[attrName];
+                } else {
+                    totalNbrOfLines += self.fields[attrName].lineCnt;
                 }
             });
 
 
         if (insertionsMade) {
-            this.$attributeContainer.children().sort(function(a, b) {
+            // order by attribute name.
+            this.$attributeContainer.children().sort(function (a, b) {
                 return $(a).data('name') > $(b).data('name');
             }).appendTo(this.$attributeContainer);
         }
+
+        // finally assign real estate based on number of lines
+        Object.keys(self.fields)
+            .forEach(function (attrName) {
+                var heightRatio = self.fields[attrName].lineCnt / totalNbrOfLines;
+                self.fields[attrName].el.css('height', heightRatio * 100 + '%');
+            });
     };
 
     MultilineAttributeDecorator.prototype._getNewFieldElement = function (desc) {
-        var el = $('<div>', {
-            class: 'attribute-field',
-        });
+        var self = this,
+            el = $('<div>', {
+                class: 'attribute-field',
+            });
 
         el.data('name', desc.name);
 
@@ -146,20 +276,56 @@ define([
             text: desc.name,
         }));
 
-        el.append($('<div>', {
-            class: 'content',
-            text: desc.value,
-        }));
+        el.append(
+            $('<textarea>', {
+                class: 'content',
+                text: desc.value,
+            })
+                .on('dblclick', function (event) {
+                    if (self.hostDesignerItem.canvas.getIsReadOnlyMode() === true) {
+                        return;
+                    }
+                    console.log($(this).is(':focus'));
+                    $(this).focus();
+                    event.stopPropagation();
+                    event.preventDefault();
+                })
+                .on('mousedown', function (event) {
+                    if (self.hostDesignerItem.canvas.getIsReadOnlyMode() === true) {
+                        return;
+                    }
+
+                    event.stopPropagation();
+                })
+                .on('keyup', function (event) {
+                    if (event.which === 27) {
+                        console.log('esc pressed');
+                        $(this).val(self.fields[desc.name].value);
+                        $(this).blur();
+                    }
+                })
+                .on('blur', function () {
+                    var nodeObj = self.client.getNode(self.nodeId);
+                    if ($(this).val() !== self.fields[desc.name].value && nodeObj && nodeObj.isReadOnly() === false) {
+                        self.client.setAttribute(self.nodeId, desc.name, $(this).val());
+                    }
+                })
+                .css({
+                    textAlign: this.config.textAlign,
+                })
+        );
 
         return el;
     };
 
     MultilineAttributeDecorator.prototype._updateFieldValue = function (attrName, value) {
         this.fields[attrName].el.find('.content').text(value);
+        this.fields[attrName].value = value;
+        this.fields[attrName].lineCnt = (value.match(/\r?\n/g) || '').length + 1 + 2; // +2 account for title
     };
 
     MultilineAttributeDecorator.prototype._updateFieldType = function (attrName, type) {
-        console.log('do not care');
+        self.fields[attrName].type = type;
     };
 
     MultilineAttributeDecorator.prototype._removeFieldElement = function (attrName) {

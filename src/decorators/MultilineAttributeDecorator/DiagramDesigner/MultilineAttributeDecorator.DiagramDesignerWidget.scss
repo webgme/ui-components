@@ -1,5 +1,5 @@
 $font_family_1: "Helvetica Neue",Helvetica,Arial,sans-serif;
-$background_color_1: #dedede;
+$background_color_1: white;
 $background_color_2: #fefefe;
 $background_color_3: #dbeafc;
 $border_color_1: rgba(82, 168, 236, 0.8);
@@ -8,16 +8,49 @@ $border_color_1: rgba(82, 168, 236, 0.8);
   min-width: 120px;
   min-height: 80px;
   border: 1px solid black;
+  border-radius: 5px;
   background-color: $background_color_1;
   padding: 3px;
   text-align: center;
   .name {
     margin-top: 10px;
     white-space: nowrap;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     font-family: $font_family_1;
     text-align: center;
+  }
+  .attribute-container {
+    font-family: 'Fira Mono',"Bitstream Vera Sans Mono",Courier,monospace;
+    font-size: 12px;
+    height: calc(100% - 17px - 17px);
+    width: 100%;
+    .attribute-field {
+      .title {
+        font-weight: bold;
+        text-align: left;
+      }
+      .content {
+        height: calc(100% - 19px);
+        width: 100%;
+        resize: none;
+      }
+    }
+  }
+  .resize-icon {
+    position: absolute;
+    right: -6px;
+    bottom: -7px;
+    padding: 5px 7px 5px 3px;
+    font-size: 14px;
+    cursor: nwse-resize;
+  }
+  .fa-rotate-45 {
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
   }
   .connector {
     background-color: $background_color_2;
