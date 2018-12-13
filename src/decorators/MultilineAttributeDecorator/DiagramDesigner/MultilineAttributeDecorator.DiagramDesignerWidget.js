@@ -202,6 +202,7 @@ define([
         }
 
         nodeObj.getValidAttributeNames()
+            .sort()
             .forEach(function (attrName) {
                 var attrMeta = nodeObj.getAttributeMeta(attrName),
                     value;
@@ -246,14 +247,14 @@ define([
                     totalNbrOfLines += self.fields[attrName].lineCnt;
                 }
             });
-
-
-        if (insertionsMade) {
-            // order by attribute name.
-            this.$attributeContainer.children().sort(function (a, b) {
-                return $(a).data('name') > $(b).data('name');
-            }).appendTo(this.$attributeContainer);
-        }
+        //
+        //
+        // if (insertionsMade) {
+        //     // order by attribute name.
+        //     this.$attributeContainer.children().sort(function (a, b) {
+        //         return $(a).data('name') > $(b).data('name');
+        //     }).appendTo(this.$attributeContainer);
+        // }
 
         // finally assign real estate based on number of lines
         Object.keys(self.fields)
