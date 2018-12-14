@@ -3,6 +3,9 @@
     "decorators": {
       "DisplayMetaDecorator": {
         "src": "src/decorators/DisplayMetaDecorator"
+      },
+      "MultilineAttributeDecorator": {
+        "src": "src/decorators/MultilineAttributeDecorator"
       }
     },
     "plugins": {

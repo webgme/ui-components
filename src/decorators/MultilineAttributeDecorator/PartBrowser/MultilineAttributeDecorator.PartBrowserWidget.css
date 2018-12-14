@@ -1,0 +1,10 @@
+.part-browser .MultilineAttribute-decorator {
+  min-width: 100px;
+  width: 100px;
+  min-height: 60px; }
+  .part-browser .MultilineAttribute-decorator .name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  .part-browser .MultilineAttribute-decorator .resize-icon {
+    display: none; }
