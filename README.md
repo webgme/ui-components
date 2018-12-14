@@ -1,4 +1,4 @@
-# UI-Components
+# WebGME UI-Components
 A collection of domain independent webgme components. To use these make sure that you have installed [webgme-cli](https://github.com/webgme/webgme-cli) and that your repository was initialized with `webgme init`.
 
 ## Visualizers
@@ -49,6 +49,30 @@ Keep in mind that you might run into Cross Origin issues unless you setup
 a reverse proxy where webgme and the embedded app are reachable from the same host.
 
 ## Decorators
+### MultilineAttributeDecorator
+Resizeable decorator displaying editable text-areas of all multiline attributes associated with the node.
+Width and height are stored at: `decoratorWidth` and `decoratorHeight` respectively expressed as integers (px).
+
+- Import using the webgme-cli tool `webgme import decorator MultilineAttributeDecorator webgme/ui-components`
+- At root-node add to `validDecorators` under meta in property editor.
+- At nodes where it should be used select it in `decorator` under preferences in property editor.
+
+Available configuration settings are as follows:
+```
+{...
+    "MultilineAttributeDecorator": {
+        "textAlign": "left",
+        "attrBlackList": [],
+    }
+...}
+```
+
+where, `textAlign` is the css value for the text-align in the text-areas and `attrBlackList` multiline attributes that should not be displayed in the decorator.
+
+Note that this decorator does not support ports in the current implementation.
+
+![image](https://user-images.githubusercontent.com/6518904/49974841-cf6e5f00-ff00-11e8-80e7-b0b911711e3f.png)
+
 ### DisplayMetaDecorator
 Inherits the functionality of ModelDecorator but also displays the meta-type of the object and ports.
 
