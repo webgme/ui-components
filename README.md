@@ -30,6 +30,10 @@ and import/export of models.
 This is simple example of how to embed another web-site as an iframe inside a webgme visualizer.
 
 The visualizer can be used as is, by default it looks for a url at the `url` attribute of the active-node.
+
+- Import using the webgme-cli tool `webgme import viz IFrameViz webgme/ui-components`
+- Register visualizer at nodes where it should be available.
+
 The attribute name can be configured in `components.json`:
 ```
 {...
