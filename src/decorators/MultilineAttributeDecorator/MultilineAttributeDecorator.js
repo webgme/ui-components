@@ -1,7 +1,7 @@
 /*globals define, _*/
 
 /**
- * @author rkereskenyi / https://github.com/rkereskenyi
+ * @author pmeijer / https://github.com/pmeijer
  */
 
 define([

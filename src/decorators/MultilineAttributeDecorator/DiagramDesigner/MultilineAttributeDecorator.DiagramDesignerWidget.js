@@ -1,16 +1,21 @@
 /*globals define, _, $*/
 
 /**
- * @author rkereskenyi / https://github.com/rkereskenyi
+ * @author pmeijer / https://github.com/pmeijer
  */
 
 define([
     'js/Constants',
     'js/Utils/ComponentSettings',
     'js/Widgets/DiagramDesigner/DiagramDesignerWidget.DecoratorBase',
+    'decorators/ModelDecorator/Core/ModelDecorator.Core',
     'text!./MultilineAttributeDecorator.DiagramDesignerWidget.html',
     'css!./MultilineAttributeDecorator.DiagramDesignerWidget.css'
-], function (CONSTANTS, ComponentSettings, DiagramDesignerWidgetDecoratorBase, MultilineAttributeDecoratorTemplate) {
+], function (CONSTANTS,
+             ComponentSettings,
+             DiagramDesignerWidgetDecoratorBase,
+             ModelDecoratorCore,
+             MultilineAttributeDecoratorTemplate) {
 
     'use strict';
 
@@ -161,12 +166,14 @@ define([
         this._renderSize();
         this._renderName();
         this._renderAttributeFields();
+        this._renderColors();
     };
 
     MultilineAttributeDecorator.prototype.update = function () {
         this._renderSize();
         this._renderName();
         this._renderAttributeFields();
+        this._renderColors();
     };
 
     MultilineAttributeDecorator.prototype._renderSize = function () {
@@ -247,14 +254,6 @@ define([
                     totalNbrOfLines += self.fields[attrName].lineCnt;
                 }
             });
-        //
-        //
-        // if (insertionsMade) {
-        //     // order by attribute name.
-        //     this.$attributeContainer.children().sort(function (a, b) {
-        //         return $(a).data('name') > $(b).data('name');
-        //     }).appendTo(this.$attributeContainer);
-        // }
 
         // finally assign real estate based on number of lines
         Object.keys(self.fields)
@@ -416,6 +415,24 @@ define([
         }
 
         return false;
+    };
+
+    MultilineAttributeDecorator.prototype._renderColors = function () {
+        ModelDecoratorCore.prototype._getNodeColorsFromRegistry.apply(this);
+
+        var self = this,
+            style = {
+                backgroundColor: this.fillColor ? this.fillColor : '',
+                borderColor: this.borderColor ? this.borderColor : '',
+                color: this.textColor ? this.textColor : '',
+            };
+
+        this.$el.css(style);
+
+        Object.keys(self.fields)
+            .forEach(function (attrName) {
+                self.fields[attrName].el.find('textarea').css(style);
+            });
     };
 
     return MultilineAttributeDecorator;

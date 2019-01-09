@@ -2,7 +2,7 @@
 /*eslint-env browser*/
 
 /**
- * @author rkereskenyi / https://github.com/rkereskenyi
+ * @author pmeijer / https://github.com/pmeijer
  */
 
 
@@ -11,6 +11,7 @@ define([
     'js/NodePropertyNames',
     'js/Widgets/PartBrowser/PartBrowserWidget.DecoratorBase',
     'js/Widgets/DiagramDesigner/DiagramDesignerWidget.Constants',
+    'decorators/ModelDecorator/Core/ModelDecorator.Core',
     'text!../DiagramDesigner/MultilineAttributeDecorator.DiagramDesignerWidget.html',
     'css!../DiagramDesigner/MultilineAttributeDecorator.DiagramDesignerWidget.css',
     'css!./MultilineAttributeDecorator.PartBrowserWidget.css'
@@ -18,6 +19,7 @@ define([
              nodePropertyNames,
              PartBrowserWidgetDecoratorBase,
              DiagramDesignerWidgetConstants,
+             ModelDecoratorCore,
              MultilineAttributeDecoratorDiagramDesignerWidgetTemplate) {
 
     'use strict';
@@ -69,10 +71,24 @@ define([
         if (nodeObj) {
             this.skinParts.$name.text(nodeObj.getAttribute(nodePropertyNames.Attributes.name) || '');
         }
+
+        this._renderColors();
     };
 
     MultilineAttributeDecoratorPartBrowserWidget.prototype.update = function () {
         this._renderContent();
+    };
+
+    MultilineAttributeDecoratorPartBrowserWidget.prototype._renderColors = function () {
+        ModelDecoratorCore.prototype._getNodeColorsFromRegistry.apply(this);
+
+        var style = {
+            backgroundColor: this.fillColor ? this.fillColor : '',
+            borderColor: this.borderColor ? this.borderColor : '',
+            color: this.textColor ? this.textColor : '',
+        };
+
+        this.$el.css(style);
     };
 
     return MultilineAttributeDecoratorPartBrowserWidget;
