@@ -310,6 +310,21 @@ define([
                         self.client.setAttribute(self.nodeId, desc.name, $(this).val());
                     }
                 })
+                .on('drop', function (event) {
+                    var nodeObj = self.client.getNode(self.nodeId),
+                        file = event.originalEvent.dataTransfer.files[0],
+                        reader = new FileReader();
+
+                    event.preventDefault();
+                    reader.onload = function (event) {
+                        if (event.target.result !== self.fields[desc.name].value &&
+                            nodeObj && nodeObj.isReadOnly() === false) {
+                            self.client.setAttribute(self.nodeId, desc.name, event.target.result);
+                        }
+
+                    };
+                    reader.readAsText(file);
+                })
                 .css({
                     textAlign: this.config.textAlign,
                 })
@@ -422,8 +437,12 @@ define([
 
         var self = this,
             style = {
-                backgroundColor: this.fillColor ? this.fillColor : '',
+                backgroundColor: this.borderColor ? this.borderColor : '',
                 borderColor: this.borderColor ? this.borderColor : '',
+                color: this.textColor ? this.textColor : '',
+            },
+            contentStyle = {
+                backgroundColor: this.fillColor ? this.fillColor : '',
                 color: this.textColor ? this.textColor : '',
             };
 
@@ -431,7 +450,7 @@ define([
 
         Object.keys(self.fields)
             .forEach(function (attrName) {
-                self.fields[attrName].el.find('textarea').css(style);
+                self.fields[attrName].el.find('textarea').css(contentStyle);
             });
     };
 

@@ -83,7 +83,7 @@ define([
         ModelDecoratorCore.prototype._getNodeColorsFromRegistry.apply(this);
 
         var style = {
-            backgroundColor: this.fillColor ? this.fillColor : '',
+            backgroundColor: this.borderColor ? this.borderColor : '',
             borderColor: this.borderColor ? this.borderColor : '',
             color: this.textColor ? this.textColor : '',
         };
