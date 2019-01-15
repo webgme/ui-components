@@ -23,7 +23,9 @@ define([
         HEIGHT_REG_KEY = 'decoratorHeight',
         WIDTH_REG_KEY = 'decoratorWidth',
         MIN_WIDTH = 120,
-        MIN_HEIGHT = 80;
+        MIN_HEIGHT = 80,
+        NO_DROP_COLOR = 'rgba(255, 0, 0, 0.1)',
+        ALLOW_DROP_COLOR = 'rgba(0, 255, 0, 0.1)';
 
     function MultilineAttributeDecorator(options) {
         var opts = _.extend({}, options);
@@ -153,7 +155,7 @@ define([
                 height: self.$el.height()
             };
 
-            console.log('mouse down on icon', JSON.stringify(self.mouseStartPos));
+            // console.log('mouse down on icon', JSON.stringify(self.mouseStartPos));
 
             $(document).on('mousemove', mouseMoveHandler);
             $(document).on('mouseup', mouseUpHandler);
@@ -285,7 +287,7 @@ define([
                     if (self.hostDesignerItem.canvas.getIsReadOnlyMode() === true) {
                         return;
                     }
-                    console.log($(this).is(':focus'));
+                    // console.log($(this).is(':focus'));
                     $(this).focus();
                     event.stopPropagation();
                     event.preventDefault();
@@ -298,8 +300,8 @@ define([
                     event.stopPropagation();
                 })
                 .on('keyup', function (event) {
+                    // console.log('keyup');
                     if (event.which === 27) {
-                        console.log('esc pressed');
                         $(this).val(self.fields[desc.name].value);
                         $(this).blur();
                     }
@@ -308,6 +310,34 @@ define([
                     var nodeObj = self.client.getNode(self.nodeId);
                     if ($(this).val() !== self.fields[desc.name].value && nodeObj && nodeObj.isReadOnly() === false) {
                         self.client.setAttribute(self.nodeId, desc.name, $(this).val());
+                    }
+                })
+                .on('dragleave', function (event) {
+                    event.preventDefault();
+                    self._renderColors();
+                })
+                .on('dragover', function (event) {
+                    event.preventDefault();
+                    if (self._canAcceptTarget(event.originalEvent.dataTransfer)) {
+                        $(event.currentTarget).css('backgroundColor', ALLOW_DROP_COLOR);
+                    } else {
+                        $(event.currentTarget).css('backgroundColor', NO_DROP_COLOR);
+                    }
+                })
+                .on('drop', function (event) {
+                    var element = this;
+                    event.preventDefault();
+                    self._renderColors();
+                    if (self._canAcceptTarget(event.originalEvent.dataTransfer)) {
+                        self._getDropContentAsString(event.originalEvent.dataTransfer, function (content) {
+                            // var nodeObj = self.client.getNode(self.nodeId);
+                            // if (content !== self.fields[desc.name].value &&
+                            //     nodeObj && nodeObj.isReadOnly() === false) {
+                            //     self.client.setAttribute(self.nodeId, desc.name, content);
+                            // }
+                            $(element).val(content);
+                            $(element).blur();
+                        });
                     }
                 })
                 .css({
@@ -422,8 +452,12 @@ define([
 
         var self = this,
             style = {
-                backgroundColor: this.fillColor ? this.fillColor : '',
+                backgroundColor: this.borderColor ? this.borderColor : '',
                 borderColor: this.borderColor ? this.borderColor : '',
+                color: this.textColor ? this.textColor : '',
+            },
+            contentStyle = {
+                backgroundColor: this.fillColor ? this.fillColor : '',
                 color: this.textColor ? this.textColor : '',
             };
 
@@ -431,8 +465,36 @@ define([
 
         Object.keys(self.fields)
             .forEach(function (attrName) {
-                self.fields[attrName].el.find('textarea').css(style);
+                self.fields[attrName].el.find('textarea').css(contentStyle);
             });
+    };
+
+    MultilineAttributeDecorator.prototype._canAcceptTarget = function (dataTransfer) {
+        //We handle only a single drop element, but microsoft word copies two elements actually for a single text...
+        if (dataTransfer.items.length > 0) {
+            if (dataTransfer.items[0].kind === 'string' ||
+                (dataTransfer.items[0].kind === 'file' && (dataTransfer.items[0].type.indexOf('text') === 0 || dataTransfer.items[0].type === ''))) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    MultilineAttributeDecorator.prototype._getDropContentAsString = function (dataTransfer, callback) {
+        var file,
+            reader;
+
+        if (dataTransfer.items[0].kind === 'string') {
+            callback(dataTransfer.getData('Text'));
+        } else {
+            file = dataTransfer.files[0];
+            reader = new FileReader();
+
+            reader.onload = function (event) {
+                callback(event.target.result);
+            };
+            reader.readAsText(file);
+        }
     };
 
     return MultilineAttributeDecorator;
