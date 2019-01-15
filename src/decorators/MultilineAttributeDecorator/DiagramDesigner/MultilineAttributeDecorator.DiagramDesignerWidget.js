@@ -24,8 +24,8 @@ define([
         WIDTH_REG_KEY = 'decoratorWidth',
         MIN_WIDTH = 120,
         MIN_HEIGHT = 80,
-        NO_DROP_COLOR = 'rgb(199,10,10)',
-        ALLOW_DROP_COLOR = 'rgb(10,199,10)';
+        NO_DROP_COLOR = 'rgba(255, 0, 0, 0.1)',
+        ALLOW_DROP_COLOR = 'rgba(0, 255, 0, 0.1)';
 
     function MultilineAttributeDecorator(options) {
         var opts = _.extend({}, options);
@@ -327,6 +327,7 @@ define([
                 .on('drop', function (event) {
                     var element = this;
                     event.preventDefault();
+                    self._renderColors();
                     if (self._canAcceptTarget(event.originalEvent.dataTransfer)) {
                         self._getDropContentAsString(event.originalEvent.dataTransfer, function (content) {
                             // var nodeObj = self.client.getNode(self.nodeId);
